@@ -1,0 +1,31 @@
+[package]
+name = "nvm-windows-gui"
+version = "1.0.0"
+description = "nvm-windows 的图形化管理界面 (Tauri 版)"
+authors = ["Antigravity"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2.0", features = [] }
+
+[dependencies]
+tauri = { version = "2.0", features = ["tray-icon"] }
+tauri-plugin-shell = "2.0"
+tauri-plugin-dialog = "2.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+reqwest = { version = "0.11", features = ["json"] }
+chrono = { version = "0.4", features = ["serde"] }
+futures = "0.3"
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]
+
+[profile.release]
+panic = "abort" # 减小体积，抛弃回溯栈
+codegen-units = 1 # 进一步优化
+lto = true # 开启全局链接优化
+opt-level = "z" # 专门针对二进制体积进行优化
+strip = true # 自动移除调试符号
+incremental = false # 禁用增量编译以获得更纯净的二进制
+
