@@ -2,7 +2,9 @@
 
 nvm-windows 的图形化管理界面，基于 Tauri v2 架构构建，极致轻量，极速响应。
 
-![演示视频](assets/media/demo.mp4)
+<video src="assets/media/demo.mp4" controls="controls" style="max-width: 100%;">
+  您的浏览器不支持 video 标签。
+</video>
 
 ## 功能特性
 
