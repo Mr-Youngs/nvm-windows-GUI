@@ -1,0 +1,8 @@
+# Handle line endings automatically for text files
+* text=auto
+
+# Ensure binary files are not modified
+*.mp4 binary
+*.png binary
+*.ico binary
+*.icns binary

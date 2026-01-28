@@ -34,4 +34,4 @@ logs/
 *.log
 
 # agent
-agent/
+.agent/
