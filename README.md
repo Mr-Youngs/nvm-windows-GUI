@@ -6,6 +6,19 @@ nvm-windows 的图形化管理界面，基于 Tauri v2 架构构建，极致轻�
   您的浏览器不支持 video 标签。您可以直接 [点击此处查看/下载演示视频](https://github.com/Mr-Youngs/nvm-windows-GUI/raw/main/assets/media/demo.mp4)。
 </video>
 
+
+# 项目截图
+
+![image-20260129050721293](assets/images/1.png)
+
+![image-20260129050721293](assets/images/2.png)
+
+![image-20260129050721293](assets/images/3.png)
+
+![image-20260129050721293](assets/images/4.png)
+
+![image-20260129050912251](assets/images/5.png)
+
 ## 功能特性
 
 - ✅ **精简体积**: 核心执行文件仅 ~3.5MB。
