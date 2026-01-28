@@ -34,9 +34,11 @@ nvm-windows 的图形化管理界面，基于 Tauri v2 架构构建，极致轻�
 - **Backend**: Rust (Tauri v2)
 - **Bundler**: Webpack + Webpack Dev Server
 
-## 使用
+## 说明与致谢
 
-下载exe文件双击运行即可。
+- 本项目为 [nvm-windows](https://github.com/coreybutler/nvm-windows) 的第三方图形化界面工具。
+- 核心功能依赖于 `nvm-windows` 命令行工具，请在使用前确保系统中已安装 `nvm`。
+- 感谢 [coreybutler](https://github.com/coreybutler) 开发的优秀开源项目 `nvm-windows`。
 
 ## 许可证
 
