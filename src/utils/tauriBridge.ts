@@ -2,7 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { TauriAPI } from '../types/tauri';
 
-export const tauriBridge: TauriAPI = {
+const tauriBridge: TauriAPI = {
     // 版本管理
     getInstalledVersions: () => invoke('get_installed_versions'),
     getActiveVersion: () => invoke('get_active_version'),
@@ -102,7 +102,7 @@ export const tauriBridge: TauriAPI = {
             return { success: false, message: e.toString() };
         }
     },
-    searchPackages: (query: string) => invoke('search_packages', { query }),
+    searchPackages: (query: string, page?: number, size?: number) => invoke('search_packages', { query, page, size }),
 
     // 配置与系统
     getConfig: () => invoke('get_config'),
@@ -155,5 +155,3 @@ if (typeof window !== 'undefined') {
         (window as any).tauriAPI = tauriBridge;
     }
 }
-
-export default tauriBridge;

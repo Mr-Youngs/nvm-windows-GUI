@@ -1,8 +1,17 @@
-import React from 'react';
-import { Card, Form, Input, Button, Space, Typography, Divider, Tabs, Radio } from 'antd';
-import { FolderOpenOutlined, GlobalOutlined, SettingOutlined, BgColorsOutlined } from '@ant-design/icons';
+import React, { useState, useEffect, useRef } from 'react';
+import { Card, Form, Input, Button, Space, Typography, Divider, Tabs, Segmented } from 'antd';
+import {
+    FolderOpenOutlined,
+    GlobalOutlined,
+    SettingOutlined,
+    BgColorsOutlined,
+    InfoCircleOutlined,
+    SunOutlined,
+    MoonOutlined
+} from '@ant-design/icons';
 import { useApp } from '../../context/AppContext';
 import { useTheme, ThemeMode } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import MirrorSettings from './MirrorSettings';
 
 const { Title, Text } = Typography;
@@ -10,76 +19,87 @@ const { Title, Text } = Typography;
 const SettingsPage: React.FC = () => {
     const { state, selectNvmPath } = useApp();
     const { theme, setTheme } = useTheme();
+    const { t } = useLanguage();
 
     const generalSettings = (
         <div style={{ maxWidth: 600 }}>
             <Form layout="vertical">
-                <Form.Item label="nvm-windows 安装路径">
+                <Form.Item label={t('settings.nvmPath')}>
                     <Space.Compact style={{ width: '100%' }}>
                         <Input
                             value={state.config?.nvmPath || ''}
                             readOnly
-                            placeholder="未配置"
+                            placeholder={t('settings.selectPathTip')}
+                            style={{ background: 'rgba(0,0,0,0.02)' }}
                         />
                         <Button
                             icon={<FolderOpenOutlined />}
                             onClick={selectNvmPath}
                         >
-                            选择
+                            {t('common.select')}
                         </Button>
                     </Space.Compact>
-                    <Text type="secondary" style={{ fontSize: 12 }}>
-                        nvm-windows 的安装根目录
-                    </Text>
                 </Form.Item>
 
-                <Form.Item label="Node.js 符号链接路径">
+                <Form.Item label={t('settings.nvmSymlink')}>
                     <Input
                         value={state.config?.nvmSymlink || ''}
                         readOnly
-                        placeholder="未配置"
-                    />
-                    <Text type="secondary" style={{ fontSize: 12 }}>
-                        当前激活的 Node.js 版本的符号链接路径
-                    </Text>
-                </Form.Item>
-
-                <Form.Item label="最后更新时间">
-                    <Input
-                        value={state.config?.lastUpdated ? new Date(state.config.lastUpdated).toLocaleString() : ''}
-                        readOnly
-                        placeholder="未配置"
+                        style={{ background: 'rgba(0,0,0,0.02)' }}
                     />
                 </Form.Item>
             </Form>
 
-            <Divider />
+            <Divider dashed />
 
-            <Space direction="vertical" style={{ width: '100%' }}>
-                <Title level={5}>关于</Title>
-                <Text>nvm-windows GUI v1.0.0</Text>
-                <Text type="secondary">
-                    一个为 nvm-windows 提供图形化界面的桌面应用程序
-                </Text>
-            </Space>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div style={{ padding: 12, borderRadius: 8, background: 'rgba(0,0,0,0.02)', border: '1px solid var(--border-color)' }}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>{t('settings.appVersion')}</Text>
+                    <div style={{ fontWeight: 600 }}>v1.0.0 Stable</div>
+                </div>
+                <div style={{ padding: 12, borderRadius: 8, background: 'rgba(0,0,0,0.02)', border: '1px solid var(--border-color)' }}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>{t('settings.lastUpdated')}</Text>
+                    <div style={{ fontWeight: 600 }}>
+                        {state.config?.lastUpdated ? new Date(state.config.lastUpdated).toLocaleDateString() : t('settings.neverSynced')}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 
     const themeSettings = (
-        <div style={{ maxWidth: 600 }}>
-            <Form layout="vertical">
-                <Form.Item label="主题模式">
-                    <Radio.Group
-                        value={theme}
-                        onChange={(e) => setTheme(e.target.value as ThemeMode)}
-                    >
-                        <Space direction="horizontal" size="large">
-                            <Radio value="light">浅色模式</Radio>
-                            <Radio value="dark">深色模式</Radio>
-                        </Space>
-                    </Radio.Group>
-                </Form.Item>
-            </Form>
+        <div style={{ maxWidth: 500 }}>
+            <Title level={5} style={{ marginBottom: 20 }}>{t('settings.theme.title')}</Title>
+            <Segmented
+                block
+                size="large"
+                value={theme}
+                onChange={(value) => setTheme(value as ThemeMode)}
+                options={[
+                    {
+                        label: (
+                            <div style={{ padding: 8 }}>
+                                <SunOutlined />
+                                <div style={{ fontSize: 12 }}>{t('settings.theme.lightDesc')}</div>
+                            </div>
+                        ),
+                        value: 'light',
+                    },
+                    {
+                        label: (
+                            <div style={{ padding: 8 }}>
+                                <MoonOutlined />
+                                <div style={{ fontSize: 12 }}>{t('settings.theme.darkDesc')}</div>
+                            </div>
+                        ),
+                        value: 'dark',
+                    },
+                ]}
+            />
+            <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', gap: 12, padding: 16, background: 'var(--primary-bg)', borderRadius: 8 }}>
+                <InfoCircleOutlined style={{ color: 'var(--primary)' }} />
+                <Text type="secondary" style={{ fontSize: 13 }}>{t('settings.theme.tip')}</Text>
+            </div>
         </div>
     );
 
@@ -87,9 +107,9 @@ const SettingsPage: React.FC = () => {
         {
             key: 'general',
             label: (
-                <span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <SettingOutlined />
-                    常规设置
+                    {t('settings.tabs.general')}
                 </span>
             ),
             children: generalSettings
@@ -97,9 +117,9 @@ const SettingsPage: React.FC = () => {
         {
             key: 'mirror',
             label: (
-                <span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <GlobalOutlined />
-                    镜像源
+                    {t('settings.tabs.mirror')}
                 </span>
             ),
             children: <MirrorSettings />
@@ -107,9 +127,9 @@ const SettingsPage: React.FC = () => {
         {
             key: 'theme',
             label: (
-                <span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <BgColorsOutlined />
-                    外观
+                    {t('settings.tabs.theme')}
                 </span>
             ),
             children: themeSettings
@@ -117,12 +137,17 @@ const SettingsPage: React.FC = () => {
     ];
 
     return (
-        <div style={{ maxWidth: 800, margin: '0 auto' }}>
-            <Card>
-                <Title level={3}>设置</Title>
-                <Tabs items={tabItems} />
-            </Card>
-        </div>
+        <Card className="glass-card">
+            <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <SettingOutlined style={{ fontSize: 24, color: 'var(--color-blue-primary)' }} />
+                <Title level={4} style={{ margin: 0, fontWeight: 700 }}>{t('settings.title')}</Title>
+            </div>
+            <Tabs
+                items={tabItems}
+                tabBarGutter={32}
+                style={{ marginTop: -8 }}
+            />
+        </Card>
     );
 };
 

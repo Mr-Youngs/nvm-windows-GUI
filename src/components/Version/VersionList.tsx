@@ -7,15 +7,15 @@ import {
     Typography,
     Tooltip,
     Modal,
-    message,
     Card,
     Row,
     Col,
-    Statistic,
     Empty,
     Spin,
     Select,
-    Switch
+    Switch,
+    message,
+    Divider
 } from 'antd';
 import {
     ReloadOutlined,
@@ -25,12 +25,15 @@ import {
     SwapOutlined,
     HddOutlined,
     SortAscendingOutlined,
-    FilterOutlined
+    FilterOutlined,
+    DatabaseOutlined,
+    AppstoreOutlined
 } from '@ant-design/icons';
 import { useApp } from '../../context/AppContext';
+import { useLanguage } from '../../context/LanguageContext';
 import VersionInstall from './VersionInstall';
 
-const { Text } = Typography;
+const { Text, Title } = Typography;
 const { confirm } = Modal;
 
 interface NodeVersion {
@@ -43,6 +46,7 @@ interface NodeVersion {
 
 const VersionList: React.FC = () => {
     const { state, loadVersions, switchVersion, uninstallVersion } = useApp();
+    const { t } = useLanguage();
     const [totalSize, setTotalSize] = useState<number>(0);
     const [installModalVisible, setInstallModalVisible] = useState(false);
     const [sortBy, setSortBy] = useState<'version' | 'date' | 'size'>('version');
@@ -59,34 +63,30 @@ const VersionList: React.FC = () => {
             const size = await window.tauriAPI.getTotalSize();
             setTotalSize(size);
         } catch (error) {
-            // 忽略错误
+            // Ignore error
         }
     };
 
     const handleSwitch = async (version: string) => {
         const success = await switchVersion(version);
         if (success) {
-            Modal.success({
-                title: '切换成功',
-                content: `已切换到 Node.js ${version}`
-            });
+            message.success(t('versionList.messages.switchSuccess', { version }));
         }
     };
 
     const handleUninstall = (version: string) => {
         confirm({
-            title: '确认卸载',
-            content: `确定要卸载 Node.js ${version} 吗？此操作不可恢复。`,
-            okText: '确定',
+            title: t('common.confirm'),
+            icon: <DeleteOutlined style={{ color: '#ff4d4f' }} />,
+            content: t('versionList.messages.uninstallConfirm', { version }),
+            okText: t('common.uninstall'),
             okType: 'danger',
-            cancelText: '取消',
+            cancelText: t('common.cancel'),
+            centered: true,
             onOk: async () => {
                 const success = await uninstallVersion(version);
                 if (success) {
-                    Modal.success({
-                        title: '卸载成功',
-                        content: `已卸载 Node.js ${version}`
-                    });
+                    message.success(t('versionList.messages.uninstallSuccess', { version }));
                     loadTotalSize();
                 }
             }
@@ -147,142 +147,199 @@ const VersionList: React.FC = () => {
         return major % 2 === 0 && major >= 14;
     };
 
-    if (!state.config?.nvmPath) {
-        return (
-            <Card>
-                <Empty description="请先配置 nvm-windows 路径" />
-            </Card>
-        );
-    }
-
     const sortedVersions = getSortedVersions();
 
     return (
-        <>
+        <Space direction="vertical" size={20} style={{ width: '100%' }}>
+            {/* Minimalist Summary */}
+            <Row gutter={16}>
+                <Col span={8}>
+                    <Card size="small" className="glass-card bg-deco-container" style={{ height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div className="bg-deco-text" style={{ left: '50%', top: '50%', right: 'auto', bottom: 'auto', transform: 'translate(-50%, -50%)', fontSize: 60 }}>{t('summary.env')}</div>
+                        <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--color-blue-primary)', zIndex: 1, textAlign: 'center' }}>{state.versions.length}</div>
+                    </Card>
+                </Col>
+                <Col span={8}>
+                    <Card size="small" className="glass-card bg-deco-container" style={{ height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div className="bg-deco-text" style={{ left: '50%', top: '50%', right: 'auto', bottom: 'auto', transform: 'translate(-50%, -50%)', fontSize: 60 }}>{t('summary.disk')}</div>
+                        <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--color-green-primary)', zIndex: 1, textAlign: 'center' }}>{formatSize(totalSize).replace(' ', '')}</div>
+                    </Card>
+                </Col>
+                <Col span={8}>
+                    <Card size="small" className="glass-card bg-deco-container" style={{ height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div className="bg-deco-text" style={{ left: '50%', top: '50%', right: 'auto', bottom: 'auto', transform: 'translate(-50%, -50%)', fontSize: 60 }}>{t('summary.run')}</div>
+                        <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--color-yellow-primary)', zIndex: 1, textAlign: 'center' }}>{state.activeVersion?.replace(/^v/, '') || t('common.none')}</div>
+                    </Card>
+                </Col>
+            </Row>
+
             <Card
-                title="已安装版本"
+                className="glass-card bg-deco-container"
+                title={
+                    <Space size={10}>
+                        <DatabaseOutlined style={{ color: 'var(--color-blue-primary)' }} />
+                        <span style={{ fontWeight: 700 }}>{t('versionList.title')}</span>
+                    </Space>
+                }
                 extra={
-                    <Space>
-                        <Button
-                            icon={<ReloadOutlined />}
-                            onClick={() => { loadVersions(); loadTotalSize(); }}
-                            loading={state.loading}
-                        >
-                            刷新
-                        </Button>
-                        <Button
-                            type="primary"
-                            icon={<PlusOutlined />}
-                            onClick={() => setInstallModalVisible(true)}
-                        >
-                            安装
-                        </Button>
+                    <Space size={8}>
+                        <Tooltip title={t('versionList.tooltips.refresh')}>
+                            <Button
+                                icon={<ReloadOutlined />}
+                                onClick={() => { loadVersions(); loadTotalSize(); }}
+                                loading={state.loading}
+                            />
+                        </Tooltip>
+                        <Tooltip title={t('versionList.tooltips.install')}>
+                            <Button
+                                type="primary"
+                                icon={<PlusOutlined />}
+                                onClick={() => setInstallModalVisible(true)}
+                                style={{ background: 'var(--color-blue-primary)', borderRadius: 8 }}
+                            />
+                        </Tooltip>
                     </Space>
                 }
             >
-                <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-                    <Col xs={24} sm={12} md={8}>
-                        <Statistic title="已安装版本" value={state.versions.length} suffix="个" />
-                    </Col>
-                    <Col xs={24} sm={12} md={8}>
-                        <Statistic title="总磁盘占用" value={formatSize(totalSize)} prefix={<HddOutlined />} />
-                    </Col>
-                    <Col xs={24} sm={24} md={8}>
-                        <Statistic title="当前版本" value={state.activeVersion || '未选择'} />
-                    </Col>
-                </Row>
-
-                <Space style={{ marginBottom: 16 }} wrap>
-                    <Space>
-                        <SortAscendingOutlined />
-                        <Text>排序：</Text>
-                        <Select
-                            value={sortBy}
-                            onChange={setSortBy}
-                            style={{ width: 100 }}
-                            options={[
-                                { value: 'version', label: '版本号' },
-                                { value: 'date', label: '安装时间' },
-                                { value: 'size', label: '磁盘占用' }
-                            ]}
-                        />
+                <div className="bg-deco-text">NODE</div>
+                {/* Control Bar */}
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: 20,
+                    padding: '8px 16px',
+                    background: 'rgba(0,0,0,0.02)',
+                    borderRadius: 10,
+                    alignItems: 'center'
+                }}>
+                    <Space size={16}>
+                        <Space size={4}>
+                            <SortAscendingOutlined style={{ color: 'var(--text-sec)' }} />
+                            <Select
+                                value={sortBy}
+                                onChange={setSortBy}
+                                variant="borderless"
+                                size="small"
+                                options={[
+                                    { value: 'version', label: t('versionList.version') },
+                                    { value: 'date', label: t('versionList.date') },
+                                    { value: 'size', label: t('versionList.size') }
+                                ]}
+                            />
+                        </Space>
                         <Select
                             value={sortOrder}
                             onChange={setSortOrder}
-                            style={{ width: 80 }}
+                            variant="borderless"
+                            size="small"
                             options={[
-                                { value: 'desc', label: '降序' },
-                                { value: 'asc', label: '升序' }
+                                { value: 'desc', label: t('versionList.desc') },
+                                { value: 'asc', label: t('versionList.asc') }
                             ]}
                         />
                     </Space>
-                    <Space>
-                        <FilterOutlined />
-                        <Text>只看 LTS：</Text>
-                        <Switch checked={showLtsOnly} onChange={setShowLtsOnly} />
+                    <Space size={12}>
+                        <span style={{ fontSize: 13, color: 'var(--text-sec)' }}>{t('versionList.ltsOnly')}</span>
+                        <Switch
+                            checked={showLtsOnly}
+                            onChange={setShowLtsOnly}
+                            size="small"
+                        />
                     </Space>
-                </Space>
+                </div>
 
                 <Spin spinning={state.loading}>
-                    {sortedVersions.length === 0 ? (
-                        <Empty description={showLtsOnly ? "未安装任何 LTS 版本" : "未安装任何 Node.js 版本"} />
-                    ) : (
-                        <List
-                            dataSource={sortedVersions}
-                            renderItem={(item: NodeVersion) => (
-                                <List.Item
-                                    actions={[
-                                        item.isActive ? (
-                                            <Tag color="success" icon={<CheckCircleOutlined />}>
-                                                当前版本
-                                            </Tag>
-                                        ) : (
-                                            <Button
-                                                type="link"
-                                                icon={<SwapOutlined />}
-                                                onClick={() => handleSwitch(item.version)}
-                                            >
-                                                切换
-                                            </Button>
-                                        ),
+                    <List
+                        dataSource={sortedVersions}
+                        locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('versionList.noVersions')} /> }}
+                        renderItem={(item) => (
+                            <List.Item
+                                className={`glass-card bg-deco-container ${item.isActive ? 'active-version-item' : ''}`}
+                                style={{
+                                    padding: '16px 20px',
+                                    marginBottom: 10,
+                                    transition: 'all 0.3s',
+                                    position: 'relative',
+                                    overflow: 'hidden'
+                                }}
+                                actions={item.isActive ? [] : [
+                                    <Tooltip title={t('versionList.tooltips.apply')}>
                                         <Button
-                                            type="link"
+                                            type="text"
+                                            icon={<SwapOutlined />}
+                                            onClick={() => handleSwitch(item.version)}
+                                            size="small"
+                                            style={{ color: 'var(--color-blue-primary)', background: 'transparent', border: 'none' }}
+                                        />
+                                    </Tooltip>,
+                                    <Tooltip title={t('versionList.tooltips.delete')}>
+                                        <Button
+                                            type="text"
                                             danger
                                             icon={<DeleteOutlined />}
                                             onClick={() => handleUninstall(item.version)}
-                                            disabled={item.isActive}
-                                        >
-                                            卸载
-                                        </Button>
-                                    ]}
-                                >
-                                    <List.Item.Meta
-                                        title={
-                                            <Space>
-                                                <Text strong style={{ fontSize: 16 }}>Node.js {item.version}</Text>
-                                                {item.isActive && <Tag color="blue">活动</Tag>}
-                                                {isLtsVersion(item.version) && <Tag color="green">LTS</Tag>}
-                                            </Space>
-                                        }
-                                        description={
-                                            <Space direction="vertical" size={0}>
-                                                <Space split={<span style={{ color: '#d9d9d9' }}>|</span>}>
-                                                    <Text type="secondary">安装时间: {new Date(item.installedDate).toLocaleString()}</Text>
-                                                    <Tooltip title={item.path}>
-                                                        <Text type="secondary"><HddOutlined /> {formatSize(item.size)}</Text>
-                                                    </Tooltip>
-                                                </Space>
-                                            </Space>
-                                        }
-                                    />
-                                </List.Item>
-                            )}
-                        />
-                    )}
+                                            size="small"
+                                            style={{ background: 'transparent', border: 'none' }}
+                                        />
+                                    </Tooltip>
+                                ]}
+                            >
+                                {item.isActive && (
+                                    <>
+                                        <div className="active-pattern-bg" />
+                                        <div className="bg-deco-text" style={{ fontSize: 60, right: -10, bottom: -25, opacity: 0.08, color: 'var(--color-green-primary)' }}>{t('common.active')}</div>
+                                    </>
+                                )}
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    width: '100%',
+                                    gap: 0,
+                                    position: 'relative',
+                                    zIndex: 1
+                                }}>
+                                    {/* Column 1: Version */}
+                                    <div style={{ width: 100, flexShrink: 0 }}>
+                                        <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-main)' }}>
+                                            v{item.version.replace(/^v/, '')}
+                                        </span>
+                                    </div>
+
+                                    {/* Column 2: LTS Tag */}
+                                    <div style={{ width: 80, flexShrink: 0 }}>
+                                        {isLtsVersion(item.version) ? (
+                                            <Tooltip title={t('versionList.tooltips.lts')}>
+                                                <Tag color="green" bordered={false} style={{ borderRadius: 4, fontWeight: 600, fontSize: 11, margin: 0 }}>LTS</Tag>
+                                            </Tooltip>
+                                        ) : (
+                                            <div style={{ width: 44 }} />
+                                        )}
+                                    </div>
+
+                                    {/* Column 3: Installed Date */}
+                                    <div style={{ width: 150, flexShrink: 0, color: 'var(--text-sec)', fontSize: 13 }}>
+                                        <Space size={6}>
+                                            <ReloadOutlined style={{ fontSize: 12, opacity: 0.4 }} />
+                                            <span>{new Date(item.installedDate).toLocaleDateString()}</span>
+                                        </Space>
+                                    </div>
+
+                                    {/* Column 4: Size */}
+                                    <div style={{ flex: 1, color: 'var(--text-sec)', fontSize: 13 }}>
+                                        <Space size={6}>
+                                            <HddOutlined style={{ fontSize: 12, opacity: 0.4 }} />
+                                            <span>{formatSize(item.size)}</span>
+                                        </Space>
+                                    </div>
+                                </div>
+                            </List.Item>
+                        )}
+                    />
                 </Spin>
             </Card>
+
             <VersionInstall visible={installModalVisible} onClose={() => setInstallModalVisible(false)} />
-        </>
+        </Space>
     );
 };
 

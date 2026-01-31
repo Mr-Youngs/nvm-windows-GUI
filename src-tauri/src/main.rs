@@ -475,10 +475,13 @@ async fn get_global_packages() -> Result<Vec<Package>, String> {
 }
 
 #[tauri::command]
-async fn search_packages(query: String) -> Result<serde_json::Value, String> {
+async fn search_packages(query: String, page: Option<u32>, size: Option<u32>) -> Result<serde_json::Value, String> {
+    let page = page.unwrap_or(1);
+    let size = size.unwrap_or(10);
+    let from = (page - 1) * size;
     let url = format!(
-        "https://registry.npmjs.org/-/v1/search?text={}&size=20",
-        query
+        "https://registry.npmjs.org/-/v1/search?text={}&size={}&from={}",
+        query, size, from
     );
     let client = reqwest::Client::new();
     let response = client
@@ -737,18 +740,9 @@ async fn validate_path(path: String) -> Result<serde_json::Value, String> {
 // --- 托盘菜单增强 ---
 
 fn build_tray_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, String> {
-    let show = MenuItem::with_id(app, "show", "显示窗口", true, None::<&str>).map_err(|e| e.to_string())?;
-    let hide = MenuItem::with_id(app, "hide", "隐藏窗口", true, None::<&str>).map_err(|e| e.to_string())?;
-    let quit = MenuItem::with_id(app, "quit", "退出应用", true, None::<&str>).map_err(|e| e.to_string())?;
-    
     let menu = Menu::with_id(app, "tray_menu").map_err(|e| e.to_string())?;
-    menu.append(&show).map_err(|e| e.to_string())?;
-    menu.append(&hide).map_err(|e| e.to_string())?;
     
-    // 分割线
-    menu.append(&tauri::menu::PredefinedMenuItem::separator(app).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
-    
-    // 版本选择列表
+    // 获取当前版本
     let current_node = {
         if let Ok(path) = get_settings_path() {
             if let Ok(content) = std::fs::read_to_string(&path) {
@@ -762,7 +756,17 @@ fn build_tray_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, String> {
         }
     };
 
-    // 重新获取已安装列表 (使用同步逻辑读取)
+    // 显示当前版本状态
+    let version_label = match &current_node {
+        Some(v) => format!("Node.js v{}", v),
+        None => "未激活版本".to_string(),
+    };
+    let version_info = MenuItem::with_id(app, "version_info", &version_label, false, None::<&str>).map_err(|e| e.to_string())?;
+    menu.append(&version_info).map_err(|e| e.to_string())?;
+    
+    menu.append(&tauri::menu::PredefinedMenuItem::separator(app).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
+
+    // 获取已安装版本列表
     let mut versions = Vec::new();
     if let Ok(path) = get_settings_path() {
         if let Ok(content) = std::fs::read_to_string(&path) {
@@ -783,17 +787,29 @@ fn build_tray_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, String> {
     }
     versions.sort_by(|a, b| b.cmp(a));
 
+    // 版本切换子菜单
     if !versions.is_empty() {
-        let version_submenu = Submenu::with_id(app, "versions_submenu", "切换 Node 版本", true).map_err(|e| e.to_string())?;
+        let version_submenu = Submenu::with_id(app, "versions_submenu", "切换版本", true).map_err(|e| e.to_string())?;
         for v in versions {
             let is_checked = Some(v.clone()) == current_node;
-            let item = CheckMenuItem::with_id(app, format!("switch:{}", v), &v, true, is_checked, None::<&str>).map_err(|e| e.to_string())?;
+            let item = CheckMenuItem::with_id(app, format!("switch:{}", v), &format!("v{}", v), true, is_checked, None::<&str>).map_err(|e| e.to_string())?;
             version_submenu.append(&item).map_err(|e| e.to_string())?;
         }
         menu.append(&version_submenu).map_err(|e| e.to_string())?;
     }
 
     menu.append(&tauri::menu::PredefinedMenuItem::separator(app).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
+
+    // 窗口控制
+    let show = MenuItem::with_id(app, "show", "显示窗口", true, None::<&str>).map_err(|e| e.to_string())?;
+    let hide = MenuItem::with_id(app, "hide", "隐藏窗口", true, None::<&str>).map_err(|e| e.to_string())?;
+    menu.append(&show).map_err(|e| e.to_string())?;
+    menu.append(&hide).map_err(|e| e.to_string())?;
+    
+    menu.append(&tauri::menu::PredefinedMenuItem::separator(app).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
+    
+    // 退出
+    let quit = MenuItem::with_id(app, "quit", "退出", true, None::<&str>).map_err(|e| e.to_string())?;
     menu.append(&quit).map_err(|e| e.to_string())?;
 
     Ok(menu)

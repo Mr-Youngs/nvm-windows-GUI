@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useLanguage } from './LanguageContext';
 
 interface Config {
     nvmPath: string;
@@ -47,6 +48,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const { t } = useLanguage();
     const [state, setState] = useState<AppState>({
         config: null,
         versions: [],
@@ -70,7 +72,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             const config = await window.tauriAPI.getConfig();
             setState(prev => ({ ...prev, config }));
         } catch (error) {
-            setError(error instanceof Error ? error.message : '加载配置失败');
+            setError(error instanceof Error ? error.message : t('settings.mirror.messages.loadError'));
         }
     };
 
@@ -81,7 +83,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             const activeVersion = await window.tauriAPI.getActiveVersion();
             setState(prev => ({ ...prev, versions, activeVersion }));
         } catch (error) {
-            setError(error instanceof Error ? error.message : '加载版本列表失败');
+            setError(error instanceof Error ? error.message : t('versionList.messages.loadError'));
         } finally {
             setLoading(false);
         }
@@ -93,7 +95,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             const globalPackages = await window.tauriAPI.getGlobalPackages();
             setState(prev => ({ ...prev, globalPackages }));
         } catch (error) {
-            setError(error instanceof Error ? error.message : '加载全局包失败');
+            setError(error instanceof Error ? error.message : t('packages.messages.loadError'));
         } finally {
             setLoading(false);
         }
@@ -113,7 +115,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 return false;
             }
         } catch (error) {
-            setError(error instanceof Error ? error.message : '切换版本失败');
+            setError(error instanceof Error ? error.message : t('versionList.messages.switchError'));
             return false;
         } finally {
             setLoading(false);
@@ -133,7 +135,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 return false;
             }
         } catch (error) {
-            setError(error instanceof Error ? error.message : '安装版本失败');
+            setError(error instanceof Error ? error.message : t('versionList.messages.installError'));
             return false;
         } finally {
             setLoading(false);
@@ -153,7 +155,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 return false;
             }
         } catch (error) {
-            setError(error instanceof Error ? error.message : '卸载版本失败');
+            setError(error instanceof Error ? error.message : t('versionList.messages.switchError'));
             return false;
         } finally {
             setLoading(false);
@@ -172,15 +174,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 if (validation.valid) {
                     const success = await window.tauriAPI.setNvmPath(path);
                     if (success) {
-                        await loadConfig();
                         await loadVersions();
                     }
                 } else {
-                    setError(validation.error || '无效的 nvm-windows 路径');
+                    setError(validation.error || t('settings.mirror.messages.loadError'));
                 }
             }
         } catch (error) {
-            setError(error instanceof Error ? error.message : '选择路径失败');
+            setError(error instanceof Error ? error.message : t('settings.mirror.messages.saveError'));
         }
     };
 

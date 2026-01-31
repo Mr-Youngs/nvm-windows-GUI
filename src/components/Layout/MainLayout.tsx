@@ -1,11 +1,19 @@
-import { Layout, Menu, Alert, theme, Button, Drawer } from 'antd';
-import { AppstoreOutlined, FolderOutlined, SettingOutlined, MenuOutlined } from '@ant-design/icons';
+import { Layout, Menu, Alert, Button, Space, Tooltip } from 'antd';
+import {
+    AppstoreOutlined,
+    FolderOutlined,
+    SettingOutlined,
+    SunOutlined,
+    MoonOutlined,
+    TranslationOutlined
+} from '@ant-design/icons';
 import { useApp } from '../../context/AppContext';
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
+import logoImage from '../../assets/logo.png';
 
-const { Header, Content } = Layout;
-const { useToken } = theme;
+const { Sider, Content } = Layout;
 
 interface MainLayoutProps {
     children: React.ReactNode;
@@ -13,127 +21,176 @@ interface MainLayoutProps {
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     const { state, setCurrentView, setError } = useApp();
-    const { token } = useToken();
-    const [drawerVisible, setDrawerVisible] = useState(false);
-    const [isMobile, setIsMobile] = useState(false);
-
-    // 监听窗口大小以判断移动端
-    useEffect(() => {
-        const handleResize = () => {
-            setIsMobile(window.innerWidth < 768);
-        };
-        handleResize();
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
+    const { theme, toggleTheme } = useTheme();
+    const { language, setLanguage, t } = useLanguage();
+    const [collapsed, setCollapsed] = React.useState(false);
 
     const menuItems = [
         {
             key: 'versions',
-            icon: <AppstoreOutlined />,
-            label: '版本管理'
+            icon: <AppstoreOutlined style={{ fontSize: 18 }} />,
+            label: t('sidebar.versions')
         },
         {
             key: 'packages',
-            icon: <FolderOutlined />,
-            label: '全局包管理'
+            icon: <FolderOutlined style={{ fontSize: 18 }} />,
+            label: t('sidebar.packages')
         },
         {
             key: 'settings',
-            icon: <SettingOutlined />,
-            label: '设置'
+            icon: <SettingOutlined style={{ fontSize: 18 }} />,
+            label: t('sidebar.settings')
         }
     ];
 
     const handleMenuClick = (e: { key: string }) => {
         setCurrentView(e.key as 'versions' | 'packages' | 'settings');
-        if (isMobile) {
-            setDrawerVisible(false);
-        }
     };
 
     return (
-        <Layout style={{ minHeight: '100vh', background: token.colorBgLayout }}>
-            <Header style={{
-                background: token.colorBgContainer,
-                padding: '0 20px',
-                borderBottom: `1px solid ${token.colorBorderSecondary}`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                position: 'sticky',
-                top: 0,
-                zIndex: 1000,
-                width: '100%'
-            }}>
+        <Layout style={{ height: '100vh', background: 'var(--bg-app)' }}>
+            <Sider
+                collapsible
+                collapsed={collapsed}
+                onCollapse={(value) => setCollapsed(value)}
+                width={200}
+                collapsedWidth={80}
+                className="glass-sidebar"
+                style={{
+                    height: '100vh',
+                    position: 'fixed',
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    zIndex: 1000
+                }}
+            >
                 <div style={{
-                    fontSize: '18px',
-                    fontWeight: 'bold',
-                    color: token.colorPrimary,
-                    whiteSpace: 'nowrap',
-                    marginRight: 20
+                    padding: collapsed ? '24px 0' : '24px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: collapsed ? 'center' : 'flex-start',
+                    gap: 12,
+                    marginBottom: 20,
+                    transition: 'all 0.2s'
                 }}>
-                    nvm GUI
-                </div>
-
-                {isMobile ? (
-                    <>
-                        <Button
-                            type="text"
-                            icon={<MenuOutlined />}
-                            onClick={() => setDrawerVisible(true)}
-                            style={{ fontSize: '16px' }}
-                        />
-                        <Drawer
-                            title="菜单"
-                            placement="right"
-                            onClose={() => setDrawerVisible(false)}
-                            open={drawerVisible}
-                            styles={{ body: { padding: 0 } }}
-                        >
-                            <Menu
-                                mode="inline"
-                                selectedKeys={[state.currentView]}
-                                items={menuItems}
-                                onClick={handleMenuClick}
-                                style={{ border: 'none' }}
-                            />
-                        </Drawer>
-                    </>
-                ) : (
-                    <Menu
-                        mode="horizontal"
-                        selectedKeys={[state.currentView]}
-                        items={menuItems}
-                        onClick={handleMenuClick}
+                    <img
+                        src={logoImage}
+                        alt="NVM GUI"
                         style={{
-                            border: 'none',
-                            flex: 1,
-                            justifyContent: 'flex-end',
-                            background: 'transparent'
+                            width: 32,
+                            height: 32,
+                            borderRadius: 8,
+                            objectFit: 'contain',
+                            flexShrink: 0
                         }}
                     />
-                )}
-            </Header>
-            <Content style={{
-                padding: isMobile ? '12px' : '24px',
-                minHeight: 'calc(100vh - 64px)',
-                background: token.colorBgLayout
-            }}>
-                {state.error && (
-                    <Alert
-                        message="错误"
-                        description={state.error}
-                        type="error"
-                        closable
-                        onClose={() => setError(null)}
-                        style={{ marginBottom: 16 }}
-                    />
-                )}
-                <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-                    {children}
+                    {!collapsed && (
+                        <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-main)', letterSpacing: -0.5, whiteSpace: 'nowrap', overflow: 'hidden' }}>
+                            NVM GUI
+                        </span>
+                    )}
                 </div>
-            </Content>
+
+                <Menu
+                    mode="inline"
+                    selectedKeys={[state.currentView]}
+                    items={menuItems}
+                    onClick={handleMenuClick}
+                    style={{ padding: collapsed ? '0' : '0 8px', borderRight: 0, background: 'transparent' }}
+                />
+
+                <div style={{
+                    position: 'absolute',
+                    bottom: 80,
+                    left: 0,
+                    right: 0,
+                    padding: collapsed ? '0 12px' : '0 16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 12
+                }}>
+                    <Tooltip title={theme === 'light' ? t('settings.theme.switchToDark') : t('settings.theme.switchToLight')} placement="right">
+                        <Button
+                            type="text"
+                            icon={theme === 'light' ? <MoonOutlined style={{ fontSize: 18 }} /> : <SunOutlined style={{ fontSize: 18, color: 'var(--color-yellow-primary)' }} />}
+                            onClick={toggleTheme}
+                            style={{
+                                width: collapsed ? 40 : '100%',
+                                height: 40,
+                                borderRadius: 10,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)',
+                                color: 'var(--text-sec)',
+                                transition: 'all 0.3s'
+                            }}
+                            className="theme-toggle-btn"
+                        >
+                            {!collapsed && <span style={{ marginLeft: 8, fontWeight: 600 }}>{theme === 'light' ? t('settings.theme.dark') : t('settings.theme.light')}</span>}
+                        </Button>
+                    </Tooltip>
+
+                    <Tooltip title={language === 'en' ? t('common.switchToChinese') : t('common.switchToEnglish')} placement="right">
+                        <Button
+                            type="text"
+                            icon={<TranslationOutlined style={{ fontSize: 18, color: 'var(--color-blue-primary)' }} />}
+                            onClick={() => setLanguage(language === 'en' ? 'zh' : 'en')}
+                            style={{
+                                width: collapsed ? 40 : '100%',
+                                height: 40,
+                                borderRadius: 10,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: 'rgba(9, 132, 227, 0.05)',
+                                color: 'var(--text-sec)',
+                                transition: 'all 0.3s'
+                            }}
+                        >
+                            {!collapsed && <span style={{ marginLeft: 8, fontWeight: 600 }}>{language === 'en' ? 'English' : '中文'}</span>}
+                        </Button>
+                    </Tooltip>
+
+                    {!collapsed && (
+                        <div style={{
+                            padding: '4px 12px',
+                            borderRadius: 8,
+                            fontSize: 11,
+                            color: 'var(--text-sec)',
+                            opacity: 0.5,
+                            letterSpacing: 1
+                        }}>
+                            v1.0.0 STABLE
+                        </div>
+                    )}
+                </div>
+            </Sider>
+
+            <Layout style={{
+                marginLeft: collapsed ? 80 : 200,
+                minHeight: '100vh',
+                background: 'transparent',
+                transition: 'margin-left 0.2s'
+            }}>
+                <Content style={{ padding: '32px 40px', height: '100vh', overflowY: 'auto' }}>
+                    {state.error && (
+                        <Alert
+                            message={state.error}
+                            type="error"
+                            showIcon
+                            closable
+                            onClose={() => setError(null)}
+                            style={{ marginBottom: 24, borderRadius: 12 }}
+                        />
+                    )}
+                    <div style={{ maxWidth: 900, margin: '0 auto' }}>
+                        {children}
+                    </div>
+                </Content>
+            </Layout>
         </Layout>
     );
 };

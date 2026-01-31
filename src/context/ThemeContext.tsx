@@ -37,8 +37,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-        document.body.style.backgroundColor = isDark ? '#141414' : '#f5f5f5';
-        document.body.style.color = isDark ? '#ffffff' : '#000000';
     }, [isDark]);
 
     const setTheme = (newTheme: ThemeMode) => {
@@ -56,20 +54,38 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
                 theme={{
                     algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
                     token: {
-                        colorPrimary: '#1890ff',
-                        borderRadius: 6,
+                        // Premium Blue Primary Color
+                        colorPrimary: '#0984e3',
+                        colorSuccess: '#00b894',
+                        colorWarning: '#fdcb6e',
+                        colorError: '#ff7675',
+                        colorInfo: '#74b9ff',
+
+                        // Refined Radius
+                        borderRadius: 10,
+                        borderRadiusLG: 14,
+
+                        // Typography
+                        fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                     },
                     components: {
                         Card: {
-                            colorBgContainer: isDark ? '#1f1f1f' : '#ffffff',
+                            colorBgContainer: isDark ? 'rgba(45, 45, 45, 0.8)' : 'rgba(255, 255, 255, 0.8)',
                         },
                         Layout: {
-                            colorBgBody: isDark ? '#141414' : '#f5f5f5',
-                            colorBgHeader: isDark ? '#1f1f1f' : '#ffffff',
+                            colorBgHeader: 'transparent',
+                            colorBgBody: 'transparent',
+                        },
+                        Button: {
+                            borderRadius: 8,
+                            controlHeight: 36,
+                            fontWeight: 500,
                         },
                         Menu: {
-                            colorBgContainer: isDark ? '#1f1f1f' : '#ffffff',
-                        },
+                            itemHeight: 44,
+                            itemBorderRadius: 8,
+                            activeBarBorderWidth: 0,
+                        }
                     },
                 }}
             >

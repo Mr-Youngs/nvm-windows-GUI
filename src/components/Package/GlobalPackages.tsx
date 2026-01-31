@@ -25,12 +25,18 @@ import {
     SyncOutlined,
     SearchOutlined,
     WarningOutlined,
-    ExclamationCircleOutlined
+    ExclamationCircleOutlined,
+    DownloadOutlined,
+    GlobalOutlined,
+    LoadingOutlined,
+    UserOutlined
 } from '@ant-design/icons';
 import { useApp } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 const { Search } = Input;
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 interface Package {
     name: string;
@@ -56,7 +62,9 @@ interface NpmSearchResult {
 }
 
 const GlobalPackages: React.FC = () => {
+    const { theme } = useTheme();
     const { state } = useApp();
+    const { t } = useLanguage();
     const [packages, setPackages] = useState<Package[]>([]);
     const [outdatedPackages, setOutdatedPackages] = useState<OutdatedPackage[]>([]);
     const [searchResults, setSearchResults] = useState<NpmSearchResult[]>([]);
@@ -88,7 +96,7 @@ const GlobalPackages: React.FC = () => {
             setPackages(pkgs);
             setOutdatedPackages(outdated);
         } catch (error) {
-            message.error('加载全局包列表失败');
+            message.error(t('packages.messages.loadError'));
         } finally {
             setLoading(false);
         }
@@ -107,11 +115,11 @@ const GlobalPackages: React.FC = () => {
             setSearchLoading(true);
             setCurrentPage(page);
             setPageSize(size);
-            const data = await window.tauriAPI.searchPackages(query);
+            const data = await window.tauriAPI.searchPackages(query, page, size);
             setSearchResults(data.results || []);
             setSearchTotal(data.total || 0);
         } catch (error) {
-            message.error('搜索失败');
+            message.error(t('packages.messages.searchError'));
         } finally {
             setSearchLoading(false);
         }
@@ -122,14 +130,14 @@ const GlobalPackages: React.FC = () => {
             setInstalling(packageName);
             const result = await window.tauriAPI.installGlobalPackage(packageName);
             if (result.success) {
-                message.success(`已安装 ${packageName}`);
+                message.success(t('packages.messages.installSuccess', { name: packageName }));
                 await loadPackages();
                 setInstallModalVisible(false);
             } else {
                 message.error(result.message);
             }
         } catch (error) {
-            message.error('安装失败');
+            message.error(t('packages.messages.installError'));
         } finally {
             setInstalling(null);
         }
@@ -140,13 +148,13 @@ const GlobalPackages: React.FC = () => {
             setUninstalling(packageName);
             const result = await window.tauriAPI.uninstallGlobalPackage(packageName);
             if (result.success) {
-                message.success(`已卸载 ${packageName}`);
+                message.success(t('packages.messages.uninstallSuccess', { name: packageName }));
                 await loadPackages();
             } else {
                 message.error(result.message);
             }
         } catch (error) {
-            message.error('卸载失败');
+            message.error(t('packages.messages.uninstallError'));
         } finally {
             setUninstalling(null);
         }
@@ -157,13 +165,13 @@ const GlobalPackages: React.FC = () => {
             setUpdating(packageName);
             const result = await window.tauriAPI.updateGlobalPackage(packageName);
             if (result.success) {
-                message.success(`已更新 ${packageName}`);
+                message.success(t('packages.messages.updateSuccess', { name: packageName }));
                 await loadPackages();
             } else {
                 message.error(result.message);
             }
         } catch (error) {
-            message.error('更新失败');
+            message.error(t('packages.messages.updateError'));
         } finally {
             setUpdating(null);
         }
@@ -171,14 +179,15 @@ const GlobalPackages: React.FC = () => {
 
     const handleUpdateAll = async () => {
         if (outdatedPackages.length === 0) {
-            message.info('所有包都是最新版本');
+            message.info(t('packages.messages.upToDate'));
             return;
         }
 
         Modal.confirm({
-            title: '确认更新所有过时包',
+            title: t('packages.messages.updateAllConfirm'),
             icon: <ExclamationCircleOutlined />,
-            content: `将更新 ${outdatedPackages.length} 个包到最新版本，是否继续？`,
+            content: t('packages.messages.updateAllContent', { count: outdatedPackages.length }),
+            centered: true,
             onOk: async () => {
                 for (const pkg of outdatedPackages) {
                     await handleUpdate(pkg.name);
@@ -191,251 +200,248 @@ const GlobalPackages: React.FC = () => {
         return outdatedPackages.find(p => p.name === name);
     };
 
-    const columns = [
-        {
-            title: '包名',
-            dataIndex: 'name',
-            key: 'name',
-            render: (name: string) => {
-                const outdated = getOutdatedInfo(name);
-                return (
-                    <Space>
-                        <Text strong>{name}</Text>
-                        {outdated && (
-                            <Tooltip title={`可更新到 ${outdated.latest}`}>
-                                <Badge status="warning" />
-                            </Tooltip>
-                        )}
-                    </Space>
-                );
-            }
-        },
-        {
-            title: '当前版本',
-            dataIndex: 'version',
-            key: 'version',
-            width: 120,
-            render: (version: string, record: Package) => {
-                const outdated = getOutdatedInfo(record.name);
-                return (
-                    <Space>
-                        <Tag>{version}</Tag>
-                        {outdated && (
-                            <Tooltip title={`最新: ${outdated.latest}`}>
-                                <Tag color="orange" icon={<WarningOutlined />}>
-                                    有更新
-                                </Tag>
-                            </Tooltip>
-                        )}
-                    </Space>
-                );
-            }
-        },
-        {
-            title: '操作',
-            key: 'action',
-            width: 200,
-            render: (_: any, record: Package) => {
-                const outdated = getOutdatedInfo(record.name);
-                return (
-                    <Space>
-                        {outdated && (
-                            <Button
-                                type="link"
-                                size="small"
-                                icon={<SyncOutlined spin={updating === record.name} />}
-                                onClick={() => handleUpdate(record.name)}
-                                loading={updating === record.name}
-                            >
-                                更新
-                            </Button>
-                        )}
-                        <Popconfirm
-                            title={`确定要卸载 ${record.name} 吗？`}
-                            onConfirm={() => handleUninstall(record.name)}
-                            okText="确定"
-                            cancelText="取消"
-                        >
-                            <Button
-                                type="link"
-                                size="small"
-                                danger
-                                icon={<DeleteOutlined />}
-                                loading={uninstalling === record.name}
-                            >
-                                卸载
-                            </Button>
-                        </Popconfirm>
-                    </Space>
-                );
-            }
-        }
-    ];
-
     if (!state.config?.nvmPath) {
         return (
             <Card>
-                <Empty description="请先配置 nvm-windows 路径" />
+                <Empty description={t('packages.messages.configureNvm')} />
             </Card>
         );
     }
 
     return (
-        <>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <Card
+                className="glass-card bg-deco-container"
                 title={
-                    <Space>
-                        <span>全局安装的包</span>
+                    <Space size={10}>
+                        <GlobalOutlined style={{ color: 'var(--color-blue-primary)' }} />
+                        <span style={{ fontWeight: 700 }}>{t('packages.title')}</span>
                         {outdatedPackages.length > 0 && (
-                            <Badge count={outdatedPackages.length} style={{ backgroundColor: '#faad14' }}>
-                                <Tag color="orange">可更新</Tag>
-                            </Badge>
+                            <Tag color="warning" bordered={false} style={{ borderRadius: 4, fontWeight: 600 }}>
+                                {t('packages.updatesAvailable', { count: outdatedPackages.length })}
+                            </Tag>
                         )}
                     </Space>
                 }
                 extra={
-                    <Space>
+                    <Space size={8}>
                         {outdatedPackages.length > 0 && (
-                            <Button
-                                icon={<SyncOutlined />}
-                                onClick={handleUpdateAll}
-                            >
-                                全部更新
-                            </Button>
+                            <Tooltip title={t('packages.updateAll')}>
+                                <Button
+                                    icon={<SyncOutlined />}
+                                    onClick={handleUpdateAll}
+                                />
+                            </Tooltip>
                         )}
-                        <Button
-                            icon={<ReloadOutlined />}
-                            onClick={loadPackages}
-                            loading={loading}
-                        >
-                            刷新
-                        </Button>
-                        <Button
-                            type="primary"
-                            icon={<PlusOutlined />}
-                            onClick={() => setInstallModalVisible(true)}
-                        >
-                            安装
-                        </Button>
+                        <Tooltip title={t('common.refresh')}>
+                            <Button
+                                icon={<ReloadOutlined />}
+                                onClick={loadPackages}
+                                loading={loading}
+                            />
+                        </Tooltip>
+                        <Tooltip title={t('packages.tooltips.install')}>
+                            <Button
+                                type="primary"
+                                icon={<PlusOutlined />}
+                                onClick={() => setInstallModalVisible(true)}
+                                style={{ background: 'var(--color-blue-primary)' }}
+                            />
+                        </Tooltip>
                     </Space>
                 }
             >
+                <div className="bg-deco-text" style={{ fontSize: 100 }}>NPM</div>
                 <Spin spinning={loading}>
                     {packages.length === 0 ? (
-                        <Empty description="未安装任何全局包" />
-                    ) : (
-                        <Table
-                            dataSource={packages}
-                            columns={columns}
-                            rowKey="name"
-                            size="small"
-                            pagination={{ pageSize: 10 }}
-                            scroll={{ x: true }}
+                        <Empty
+                            description={t('packages.noPackages')}
+                            style={{ padding: '40px 0' }}
                         />
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {packages.map((pkg) => {
+                                const outdated = getOutdatedInfo(pkg.name);
+                                return (
+                                    <div
+                                        key={pkg.name}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            padding: '14px 18px',
+                                            borderRadius: 12,
+                                            background: outdated
+                                                ? (theme === 'dark' ? 'rgba(253, 203, 110, 0.15)' : 'var(--color-yellow-light)')
+                                                : 'rgba(255,255,255,0.3)',
+                                            border: outdated ? '1px solid rgba(253, 203, 110, 0.3)' : '1px solid rgba(0,0,0,0.03)',
+                                            transition: 'all 0.3s'
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                                            {/* Column 1: Package Name */}
+                                            <div style={{ width: 180, flexShrink: 0 }}>
+                                                <Text style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-main)' }}>{pkg.name}</Text>
+                                            </div>
+
+                                            {/* Column 2: Version Tag */}
+                                            <div style={{ width: 100, flexShrink: 0 }}>
+                                                <Tag bordered={false} style={{ borderRadius: 6, fontWeight: 600, margin: 0 }}>v{pkg.version}</Tag>
+                                            </div>
+
+                                            {/* Column 3: Update Status */}
+                                            <div style={{ flex: 1 }}>
+                                                {outdated && (
+                                                    <Tooltip title={t('packages.messages.updateAvailable')}>
+                                                        <Tag color="orange" bordered={false} icon={<SyncOutlined spin />} style={{ borderRadius: 6, fontWeight: 600 }}>{t('packages.updateAvailable')}</Tag>
+                                                    </Tooltip>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <Space size={8}>
+                                            {outdated && (
+                                                <Tooltip title={t('common.apply')}>
+                                                    <Button
+                                                        type="text"
+                                                        size="small"
+                                                        icon={<SyncOutlined spin={updating === pkg.name} />}
+                                                        onClick={() => handleUpdate(pkg.name)}
+                                                        loading={updating === pkg.name}
+                                                        style={{ color: 'var(--color-yellow-primary)', background: 'transparent' }}
+                                                    />
+                                                </Tooltip>
+                                            )}
+                                            <Popconfirm
+                                                title={t('packages.messages.uninstallConfirm', { name: pkg.name })}
+                                                onConfirm={() => handleUninstall(pkg.name)}
+                                                okText={t('common.yes')}
+                                                cancelText={t('common.no')}
+                                            >
+                                                <Tooltip title={t('common.uninstall')}>
+                                                    <Button
+                                                        type="text"
+                                                        size="small"
+                                                        danger
+                                                        icon={<DeleteOutlined />}
+                                                        loading={uninstalling === pkg.name}
+                                                        style={{ background: 'transparent', border: 'none' }}
+                                                    />
+                                                </Tooltip>
+                                            </Popconfirm>
+                                        </Space>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     )}
                 </Spin>
             </Card>
 
             <Modal
-                title="安装全局包"
+                title={
+                    <Space size={8}>
+                        <SearchOutlined style={{ color: 'var(--color-blue-primary)' }} />
+                        <span style={{ fontWeight: 700 }}>{t('packages.installOnline')}</span>
+                    </Space>
+                }
                 open={installModalVisible}
                 onCancel={() => setInstallModalVisible(false)}
                 footer={null}
-                width={800}
-                styles={{
-                    body: {
-                        height: 500,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 16,
-                        paddingTop: 16
-                    }
-                }}
+                width={650}
+                centered
+                styles={{ body: { padding: '20px 24px', height: 550, display: 'flex', flexDirection: 'column' } }}
             >
-                <Search
-                    placeholder="搜索 npm 包..."
-                    enterButton={<SearchOutlined />}
-                    size="large"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onSearch={(value) => handleSearch(value, 1, pageSize)}
-                    loading={searchLoading}
-                />
-
-                <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
-                    <Spin spinning={searchLoading}>
-                        {searchResults.length === 0 ? (
-                            searchQuery ? (
-                                <Empty description="未找到匹配的包" />
-                            ) : (
-                                <Empty description="输入包名搜索 npm 包" />
-                            )
-                        ) : (
-                            <List
-                                dataSource={searchResults}
-                                renderItem={(item) => (
-                                    <List.Item
-                                        actions={[
-                                            <Button
-                                                type="primary"
-                                                size="small"
-                                                onClick={() => handleInstall(item.name)}
-                                                loading={installing === item.name}
-                                            >
-                                                安装
-                                            </Button>
-                                        ]}
-                                    >
-                                        <List.Item.Meta
-                                            title={
-                                                <Space>
-                                                    <Text strong>{item.name}</Text>
-                                                    <Tag>{item.version}</Tag>
-                                                </Space>
-                                            }
-                                            description={
-                                                <Space direction="vertical" size={4} style={{ width: '100%' }}>
-                                                    <Text type="secondary" style={{ fontSize: 13 }}>
-                                                        {item.description || '无描述'}
-                                                    </Text>
-                                                    <Space split={<Divider type="vertical" />} wrap style={{ fontSize: 12 }}>
-                                                        {item.author && <Text type="secondary">作者: {item.author}</Text>}
-                                                        <Text type="secondary">
-                                                            下载量: {item.downloads >= 10000
-                                                                ? `${(item.downloads / 10000).toFixed(1)} 万`
-                                                                : item.downloads.toLocaleString()}
-                                                        </Text>
-                                                        {item.lastUpdated && (
-                                                            <Text type="secondary">
-                                                                最后更新: {new Date(item.lastUpdated).toLocaleDateString()}
-                                                            </Text>
-                                                        )}
-                                                    </Space>
-                                                </Space>
-                                            }
-                                        />
-                                    </List.Item>
-                                )}
+                <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 16 }}>
+                    <Search
+                        placeholder={t('packages.searchTip')}
+                        enterButton={
+                            <Button
+                                type="primary"
+                                icon={searchLoading ? <LoadingOutlined /> : <SearchOutlined />}
+                                style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }}
                             />
-                        )}
-                    </Spin>
-                </div>
+                        }
+                        size="large"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onSearch={(value) => handleSearch(value, 1, pageSize)}
+                    />
 
-                {searchResults.length > 0 && (
-                    <div style={{ padding: '8px 0', borderTop: '1px solid #f0f0f0' }}>
+                    <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', paddingRight: 4 }}>
+                        <Spin spinning={searchLoading}>
+                            {searchResults.length === 0 ? (
+                                <Empty
+                                    description={searchQuery ? t('packages.resultEmpty') : t('packages.resultPrompt')}
+                                    style={{ padding: '60px 0' }}
+                                />
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                    {searchResults.map((item) => (
+                                        <div
+                                            key={item.name}
+                                            style={{
+                                                padding: '16px',
+                                                borderRadius: 12,
+                                                background: 'rgba(0,0,0,0.02)',
+                                                border: '1px solid var(--border-subtle)',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                                                <Space size={10}>
+                                                    <Text style={{ fontSize: 16, fontWeight: 700 }}>{item.name}</Text>
+                                                    <Tag bordered={false} style={{ borderRadius: 4 }}>v{item.version}</Tag>
+                                                </Space>
+                                                <Button
+                                                    type="primary"
+                                                    size="small"
+                                                    icon={<DownloadOutlined />}
+                                                    onClick={() => handleInstall(item.name)}
+                                                    loading={installing === item.name}
+                                                    style={{ background: 'var(--color-blue-primary)', borderRadius: 6 }}
+                                                >
+                                                    {t('common.install')}
+                                                </Button>
+                                            </div>
+                                            <div style={{ fontSize: 13, color: 'var(--text-sec)', marginBottom: 12, lineHeight: 1.5 }}>
+                                                {item.description || t('common.noDescription')}
+                                            </div>
+                                            <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--text-sec)', opacity: 0.8 }}>
+                                                <Tooltip title={t('common.author')}>
+                                                    <Space size={4}>
+                                                        <UserOutlined />
+                                                        <span style={{ fontWeight: 500 }}>{item.author || t('common.unknown')}</span>
+                                                    </Space>
+                                                </Tooltip>
+                                                <Tooltip title={t('common.downloads')}>
+                                                    <Space size={4}>
+                                                        <DownloadOutlined />
+                                                        <span style={{ fontWeight: 500 }}>{typeof item.downloads === 'number' && !isNaN(item.downloads) ? item.downloads.toLocaleString() : '-'}</span>
+                                                    </Space>
+                                                </Tooltip>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </Spin>
+                    </div>
+
+                    <div style={{ flexShrink: 0, paddingTop: 8, borderTop: '1px solid var(--border-subtle)', textAlign: 'right', overflow: 'hidden' }}>
                         <Pagination
                             size="small"
                             current={currentPage}
                             pageSize={pageSize}
                             total={searchTotal}
                             onChange={(page: number, size: number) => handleSearch(searchQuery, page, size)}
-                            showSizeChanger
-                            showTotal={(total: number) => `共 ${total} 条结果`}
+                            showSizeChanger={false}
+                            showLessItems
+                            style={{ whiteSpace: 'nowrap', flexWrap: 'nowrap' }}
                         />
                     </div>
-                )}
+                </div>
             </Modal>
-        </>
+        </div>
     );
 };
 
