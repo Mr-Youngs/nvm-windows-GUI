@@ -5,11 +5,11 @@
 
 ## Screenshots
 
-![image-20260129050721293](assets/images/1.png)
+![image-20260129050721293](assets/images/1.png?v=0.3.0)
 
-![image-20260129050721293](assets/images/3.png)
-![image-20260129050721293](assets/images/4.png)
-![image-20260129050912251](assets/images/5.png)
+![image-20260129050721293](assets/images/3.png?v=0.3.0)
+![image-20260129050721293](assets/images/4.png?v=0.3.0)
+![image-20260129050912251](assets/images/5.png?v=0.3.0)
 
 ## Features
 
