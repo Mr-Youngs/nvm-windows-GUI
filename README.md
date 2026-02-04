@@ -2,16 +2,11 @@
 
 [English](README.md) | [中文](README.zh.md)
 
-A graphical user interface for nvm-windows, built on the Tauri v2 architecture. Extremely lightweight and lightning-fast responsiveness.
-
-<video src="https://github.com/Mr-Youngs/nvm-windows-GUI/raw/main/assets/media/demo.mp4" controls="controls" style="max-width: 100%;">
-  Your browser does not support the video tag. You can [click here to view/download the demo video](https://github.com/Mr-Youngs/nvm-windows-GUI/raw/main/assets/media/demo.mp4).
-</video>
 
 ## Screenshots
 
 ![image-20260129050721293](assets/images/1.png)
-![image-20260129050721293](assets/images/2.png)
+
 ![image-20260129050721293](assets/images/3.png)
 ![image-20260129050721293](assets/images/4.png)
 ![image-20260129050912251](assets/images/5.png)

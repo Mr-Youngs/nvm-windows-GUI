@@ -1,29 +1,31 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     Input,
-    Modal,
     Tabs,
     Button,
     Tag,
     Space,
     Empty,
-    Spin,
     Progress,
     message,
     Pagination,
     Typography
 } from 'antd';
 import {
-    DownloadOutlined,
+    GlobalOutlined,
+    PauseCircleOutlined,
+    PlayCircleOutlined,
+    CloseCircleOutlined,
     CheckCircleOutlined,
     ClockCircleOutlined,
     SearchOutlined,
-    GlobalOutlined
+    DownloadOutlined
 } from '@ant-design/icons';
 
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import StyledModal from '../Common/StyledModal';
 
 const { Text } = Typography;
 
@@ -49,15 +51,12 @@ interface VersionInstallProps {
 }
 
 const VersionInstall: React.FC<VersionInstallProps> = ({ visible, onClose }) => {
-    const { loadVersions } = useApp();
+    const { state, loadVersions, pauseDownload, resumeDownload, cancelDownload } = useApp();
     const { theme } = useTheme();
     const { t } = useLanguage();
     const [allVersions, setAllVersions] = useState<AvailableVersion[]>([]);
     const [majorVersions, setMajorVersions] = useState<MajorVersionInfo[]>([]);
     const [loading, setLoading] = useState(false);
-    const [installing, setInstalling] = useState(false);
-    const [installProgress, setInstallProgress] = useState(0);
-    const [installStatus, setInstallStatus] = useState('');
     const [activeTab, setActiveTab] = useState('major');
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize] = useState(10);
@@ -69,10 +68,6 @@ const VersionInstall: React.FC<VersionInstallProps> = ({ visible, onClose }) => 
     useEffect(() => {
         if (visible) {
             loadAvailableVersions();
-        } else {
-            setInstalling(false);
-            setInstallProgress(0);
-            setInstallStatus('');
         }
     }, [visible]);
 
@@ -94,41 +89,80 @@ const VersionInstall: React.FC<VersionInstallProps> = ({ visible, onClose }) => 
 
     const handleInstall = async (version: string) => {
         try {
-            setInstalling(true);
-            setInstallProgress(0);
-            setInstallStatus(t('install.messages.connecting'));
-
-            // 模拟进度动画：让进度条缓慢递增，提升用户体验
-            let simulatedProgress = 0;
-            const progressInterval = setInterval(() => {
-                simulatedProgress += Math.random() * 3 + 1; // 每次增加1-4%
-                if (simulatedProgress > 85) {
-                    simulatedProgress = 85; // 最多到85%，留余地给真实完成
-                }
-                setInstallProgress(Math.floor(simulatedProgress));
-            }, 500); // 每500ms更新一次
-
-            const result = await window.tauriAPI.installVersion(version);
-
-            // 停止模拟进度
-            clearInterval(progressInterval);
-
-            if (result.success) {
-                // 快速完成到100%
-                setInstallProgress(100);
-                setInstallStatus(t('install.messages.completed'));
-                await new Promise(resolve => setTimeout(resolve, 500)); // 短暂停留显示100%
-                message.success(t('install.success', { version }));
-                await loadVersions();
-                onClose();
-            } else {
-                message.error(result.message);
-                setInstalling(false);
-            }
+            await window.tauriAPI.installVersion(version);
+            message.info(t('install.messages.installStarted', { version }));
         } catch (error) {
-            message.error(t('install.messages.networkError'));
-            setInstalling(false);
+            message.error(t('install.messages.installError'));
         }
+    };
+
+    const handleClose = () => {
+        setSearchQuery('');
+        setCurrentPage(1);
+        setActiveTab('major');
+        onClose();
+    };
+
+    const renderVersionControl = (versionStr: string) => {
+        // Handle both "v20.0.0" and "20.0.0" formats
+        const version = versionStr.startsWith('v') ? versionStr : `v${versionStr}`;
+        const download = state.activeDownloads[version];
+        const isInstalled = state.versions.some(v => v.version === version || `v${v.version}` === version);
+
+        if (isInstalled) {
+            return (
+                <Tag color="success" bordered={false} icon={<CheckCircleOutlined />} style={{ borderRadius: 6, padding: '2px 8px' }}>
+                    {t('common.installed')}
+                </Tag>
+            );
+        }
+
+        if (download) {
+            return (
+                <Space size={8}>
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28 }}>
+                        <Progress
+                            type="circle"
+                            percent={download.progress}
+                            size={28}
+                            strokeWidth={12}
+                            showInfo={false}
+                            status={download.isPaused ? 'normal' : 'active'}
+                            strokeColor={download.isPaused ? '#bfbfbf' : 'var(--color-blue-primary)'}
+                        />
+                        <span style={{ fontSize: 9, position: 'absolute', fontWeight: 800, color: 'var(--text-main)' }}>
+                            {download.progress}%
+                        </span>
+                    </div>
+                    <Space size={0}>
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={download.isPaused ? <PlayCircleOutlined /> : <PauseCircleOutlined />}
+                            onClick={() => download.isPaused ? resumeDownload(version) : pauseDownload(version)}
+                            style={{ color: 'var(--color-blue-primary)', padding: '0 4px' }}
+                        />
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={<CloseCircleOutlined />}
+                            onClick={() => cancelDownload(version)}
+                            style={{ padding: '0 4px' }}
+                            danger
+                        />
+                    </Space>
+                </Space>
+            );
+        }
+
+        return (
+            <Button
+                type="text"
+                icon={<DownloadOutlined />}
+                onClick={() => handleInstall(version)}
+                style={{ color: 'var(--color-blue-primary)', fontSize: 20, padding: 0 }}
+            />
+        );
     };
 
     const getVersionTag = (version: AvailableVersion) => {
@@ -145,10 +179,8 @@ const VersionInstall: React.FC<VersionInstallProps> = ({ visible, onClose }) => 
     };
 
     const renderMajorVersions = () => {
-        if (loading) return <div style={{ textAlign: 'center', padding: '60px 0' }}><Spin size="large" tip={t('install.messages.syncing')} /></div>;
-
         return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '16px 20px', height: '100%', overflowY: 'auto' }}>
                 {majorVersions.map((item) => (
                     <div
                         key={item.major}
@@ -187,15 +219,7 @@ const VersionInstall: React.FC<VersionInstallProps> = ({ visible, onClose }) => 
                                 </Text>
                             </div>
                         </Space>
-                        <Button
-                            type="primary"
-                            icon={<DownloadOutlined />}
-                            onClick={() => handleInstall(item.latest)}
-                            ghost
-                            style={{ borderRadius: 8 }}
-                        >
-                            {t('common.install')}
-                        </Button>
+                        {renderVersionControl(item.latest)}
                     </div>
                 ))}
             </div>
@@ -212,12 +236,13 @@ const VersionInstall: React.FC<VersionInstallProps> = ({ visible, onClose }) => 
         const paginatedVersions = filteredVersions.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
         return (
-            <div style={{ display: 'flex', flexDirection: 'column', height: 400 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '16px 20px 0 20px' }}>
                 <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     marginBottom: 12,
-                    padding: '0 4px'
+                    padding: '0 4px',
+                    flexShrink: 0
                 }}>
                     <Input
                         placeholder={t('install.searchPlaceholder')}
@@ -266,19 +291,25 @@ const VersionInstall: React.FC<VersionInstallProps> = ({ visible, onClose }) => 
                             <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
                                 {getVersionTag(version)}
                             </div>
-                            <div style={{ flex: '0 0 100px', textAlign: 'right' }}>
-                                <Button
-                                    type="text"
-                                    size="small"
-                                    icon={<DownloadOutlined />}
-                                    onClick={() => handleInstall(version.version)}
-                                    style={{ color: 'var(--color-blue-primary)', fontWeight: 600 }}
-                                >
-                                    {t('common.install')}
-                                </Button>
+                            <div style={{ flex: '0 0 100px', textAlign: 'right', display: 'flex', justifyContent: 'flex-end' }}>
+                                {renderVersionControl(version.version)}
                             </div>
                         </div>
                     ))}
+                </div>
+
+                <div style={{ marginTop: 12, textAlign: 'right', flexShrink: 0, paddingBottom: 16 }}>
+                    <Pagination
+                        size="small"
+                        current={currentPage}
+                        pageSize={pageSize}
+                        total={filteredVersions.length}
+                        onChange={(page) => {
+                            setCurrentPage(page);
+                            allVersionsScrollRef.current?.scrollTo(0, 0);
+                        }}
+                        showSizeChanger={false}
+                    />
                 </div>
             </div>
         );
@@ -286,75 +317,36 @@ const VersionInstall: React.FC<VersionInstallProps> = ({ visible, onClose }) => 
 
 
     return (
-        <Modal
-            title={
-                <Space size={8}>
-                    <GlobalOutlined style={{ color: 'var(--color-blue-primary)' }} />
-                    <span style={{ fontWeight: 700 }}>{t('install.title')}</span>
-                </Space>
-            }
+        <StyledModal
+            title={t('install.title')}
+            icon={<GlobalOutlined />}
             open={visible}
-            onCancel={onClose}
-            footer={null}
+            onCancel={handleClose}
             width={600}
-            centered
+            height={500}
+            loading={loading}
         >
-            {installing ? (
-                <div style={{
-                    padding: '40px 0',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: 20
-                }}>
-                    <Progress type="circle" percent={installProgress} strokeColor="var(--color-blue-primary)" width={120} />
-                    <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 4, color: 'var(--text-main)' }}>{t('install.deploying')}</div>
-                        <Text type="secondary">{installStatus}</Text>
-                    </div>
-                </div>
-            ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                 <Tabs
                     activeKey={activeTab}
                     onChange={setActiveTab}
+                    style={{ padding: '0 20px' }}
                     items={[
                         {
                             key: 'major',
                             label: t('install.recommended'),
-                            children: (
-                                <div style={{ minHeight: 400 }}>{renderMajorVersions()}</div>
-                            )
                         },
                         {
                             key: 'all',
                             label: t('install.allVersions'),
-                            children: (
-                                <div style={{ minHeight: 400 }}>
-                                    {renderAllVersions()}
-                                    <div style={{ marginTop: 12, textAlign: 'right' }}>
-                                        <Pagination
-                                            size="small"
-                                            current={currentPage}
-                                            pageSize={pageSize}
-                                            total={allVersions.filter(v => {
-                                                const matchesSearch = v.version.toLowerCase().includes(searchQuery.toLowerCase());
-                                                const matchesLts = showLtsOnly ? v.lts : true;
-                                                return matchesSearch && matchesLts;
-                                            }).length}
-                                            onChange={(page) => {
-                                                setCurrentPage(page);
-                                                allVersionsScrollRef.current?.scrollTo(0, 0);
-                                            }}
-                                            showSizeChanger={false}
-                                        />
-                                    </div>
-                                </div>
-                            )
                         }
                     ]}
                 />
-            )}
-        </Modal>
+                <div style={{ flex: 1, overflow: 'hidden' }}>
+                    {activeTab === 'major' ? renderMajorVersions() : renderAllVersions()}
+                </div>
+            </div>
+        </StyledModal>
     );
 };
 

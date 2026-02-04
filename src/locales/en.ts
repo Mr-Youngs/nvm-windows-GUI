@@ -25,6 +25,8 @@ export const en = {
         back: 'Back',
         switchToChinese: 'Switch to Chinese',
         switchToEnglish: 'Switch to English',
+        installed: 'Installed',
+        pendingUpdate: 'Update Available',
     },
     sidebar: {
         versions: 'Environment',
@@ -112,7 +114,6 @@ export const en = {
         tabs: {
             general: 'General',
             mirror: 'Mirrors',
-            theme: 'Appearance',
         },
         mirror: {
             title: 'Mirrors',
@@ -139,13 +140,8 @@ export const en = {
             }
         },
         theme: {
-            title: 'Appearance Mode',
-            light: 'Light',
-            dark: 'Dark',
-            lightDesc: 'Fresh & Bright',
-            darkDesc: 'Deep & Eye-care',
-            tip: 'Changing theme will update the visual style of all components instantly.',
-            toggle: 'Toggle Theme',
+            dark: 'Dark Mode',
+            light: 'Light Mode',
             switchToDark: 'Switch to Dark Mode',
             switchToLight: 'Switch to Light Mode',
         }
@@ -166,6 +162,7 @@ export const en = {
             completed: 'Installation completed',
             networkError: 'Installation failed, please check your network',
             syncing: 'Syncing version library...',
+            installStarted: 'Installation of {version} started...',
         }
     },
     wizard: {
@@ -183,6 +180,22 @@ export const en = {
             desc: 'This application works with nvm-windows. Please select your instance directory below, usually located at AppData\\Roaming\\nvm in your user directory.',
         },
         associateBtn: 'Associate Installation Directory',
+        // Auto-install related
+        detectStatus: 'Detecting installation status...',
+        notInstalled: 'nvm-windows not detected',
+        notInstalledDesc: 'The program will automatically download and install nvm-windows for you',
+        installAuto: 'Auto Install',
+        installManual: 'Manually Associate Existing Installation',
+        selectInstallDir: 'Select Installation Directory',
+        defaultPath: 'Default Path',
+        downloading: 'Downloading...',
+        downloadProgress: 'Downloaded {percent}%',
+        extracting: 'Extracting...',
+        configuring: 'Configuring environment variables...',
+        installSuccess: 'Installation Successful',
+        installSuccessDesc: 'nvm-windows has been successfully installed on your system',
+        restartTerminal: 'Please restart your terminal or IDE for the environment variables to take effect',
+        installError: 'Installation Failed',
     },
     closeDialog: {
         title: 'Close Application',
@@ -190,5 +203,32 @@ export const en = {
         minimize: 'Minimize to Tray',
         exit: 'Exit Application',
         remember: 'Remember my choice, don\'t ask again',
+    },
+    globalPackages: {
+        title: 'Global Packages Settings',
+        enableShared: 'Configure Shared Global Packages Directory',
+        enableSharedDesc: 'Sets the npm prefix in your user-level .npmrc file. All Node.js versions will install global packages to this directory when running npm install -g. You need to add this directory to PATH to run global commands.',
+        sharedPath: 'Shared Directory Path',
+        selectPath: 'Select Path',
+        defaultPathHint: 'Recommended: use default path',
+        currentStatus: 'Current Status',
+        packageCount: '{count} global packages',
+        diskUsage: 'Disk Usage',
+        pathStatus: 'PATH Status',
+        pathConfigured: 'Configured',
+        pathNotConfigured: 'Not Configured',
+        addToPath: 'Add to PATH',
+        pathAddSuccess: 'PATH configured successfully',
+        pathAddDesc: 'Please restart your terminal for changes to take effect',
+        disable: 'Disable Sharing',
+        disableConfirm: 'Disabling will restore separate global packages for each version',
+        enable: 'Enable Sharing',
+        enableConfirm: 'Enabling will share global packages across all versions',
+        messages: {
+            setSuccess: 'Shared directory configured successfully',
+            setError: 'Configuration failed',
+            pathAddSuccess: 'PATH added successfully',
+            pathAddError: 'Failed to add to PATH',
+        }
     }
 };

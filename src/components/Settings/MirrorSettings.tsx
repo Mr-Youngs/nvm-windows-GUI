@@ -143,21 +143,29 @@ const MirrorSettings: React.FC = () => {
                                     <Radio
                                         key={preset.id}
                                         value={preset.id}
+                                        className="mirror-radio-item"
                                         style={{
                                             display: 'flex',
                                             alignItems: 'center',
                                             padding: '12px 16px',
                                             border: '1px solid var(--border-subtle)',
-                                            borderRadius: 12,
+                                            borderRadius: 6,
                                             background: isActive
                                                 ? (theme === 'dark' ? 'rgba(116, 185, 255, 0.15)' : 'var(--color-blue-light)')
                                                 : 'rgba(0,0,0,0.01)',
                                             borderColor: isActive ? 'var(--color-blue-primary)' : 'var(--border-subtle)',
                                             transition: 'all 0.3s',
-                                            width: '100%'
+                                            width: '100%',
+                                            marginInlineEnd: 0
                                         }}
                                     >
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginLeft: 8 }}>
+                                        <div style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            width: '100%',
+                                            paddingLeft: 8
+                                        }}>
                                             <Space direction="vertical" size={0}>
                                                 <Space>
                                                     <Text style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-main)' }}>{preset.name}</Text>
@@ -170,16 +178,22 @@ const MirrorSettings: React.FC = () => {
                                                 <Text type="secondary" style={{ fontSize: 12, opacity: 0.6 }}>{preset.nodeUrl}</Text>
                                             </Space>
                                             {speedResult && (
-                                                speedResult.success ? (
-                                                    <Text
-                                                        style={{ fontSize: 13, fontWeight: 600 }}
-                                                        type={speedResult.latency < 200 ? 'success' : speedResult.latency < 500 ? 'warning' : 'danger'}
-                                                    >
-                                                        {speedResult.latency}ms
-                                                    </Text>
-                                                ) : (
-                                                    <Tag color="red" bordered={false} style={{ fontSize: 11, borderRadius: 4 }}>{t('settings.mirror.timeout')}</Tag>
-                                                )
+                                                <div style={{ flexShrink: 0, marginLeft: 16, textAlign: 'right', minWidth: 70 }}>
+                                                    {speedResult.success ? (
+                                                        <Text
+                                                            style={{
+                                                                fontSize: 14,
+                                                                fontWeight: 600,
+                                                                color: speedResult.latency < 300 ? 'var(--color-green-primary)' : speedResult.latency < 800 ? 'var(--color-yellow-primary)' : 'var(--color-red-primary)',
+                                                                letterSpacing: '-0.02em'
+                                                            }}
+                                                        >
+                                                            {speedResult.latency}ms
+                                                        </Text>
+                                                    ) : (
+                                                        <Tag color="red" bordered={false} style={{ fontSize: 11, borderRadius: 4, margin: 0 }}>{t('settings.mirror.timeout')}</Tag>
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
                                     </Radio>
@@ -188,18 +202,20 @@ const MirrorSettings: React.FC = () => {
 
                             <Radio
                                 value="custom"
+                                className="mirror-radio-item"
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     padding: '12px 16px',
                                     border: '1px solid var(--border-subtle)',
-                                    borderRadius: 12,
+                                    borderRadius: 6,
                                     background: selectedPreset === 'custom'
                                         ? (theme === 'dark' ? 'rgba(116, 185, 255, 0.15)' : 'var(--color-blue-light)')
                                         : 'rgba(0,0,0,0.01)',
                                     borderColor: selectedPreset === 'custom' ? 'var(--color-blue-primary)' : 'var(--border-subtle)',
                                     transition: 'all 0.3s',
-                                    width: '100%'
+                                    width: '100%',
+                                    marginInlineEnd: 0
                                 }}
                             >
                                 <Space style={{ marginLeft: 8 }}>
@@ -232,12 +248,14 @@ const MirrorSettings: React.FC = () => {
                 </Spin>
             </Card>
 
-            {testingSpeed && (
-                <div style={{ textAlign: 'center', padding: '10px 0' }}>
-                    <Spin size="small" tip={t('settings.mirror.testing')} />
-                </div>
-            )}
-        </Space>
+            {
+                testingSpeed && (
+                    <div style={{ textAlign: 'center', padding: '10px 0' }}>
+                        <Spin size="small" tip={t('settings.mirror.testing')} />
+                    </div>
+                )
+            }
+        </Space >
     );
 };
 

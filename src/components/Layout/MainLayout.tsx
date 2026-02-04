@@ -48,7 +48,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     };
 
     return (
-        <Layout style={{ height: '100vh', background: 'var(--bg-app)' }}>
+        <Layout style={{ height: '100vh', background: 'transparent' }}>
             <Sider
                 collapsible
                 collapsed={collapsed}
@@ -74,17 +74,28 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                     marginBottom: 20,
                     transition: 'all 0.2s'
                 }}>
-                    <img
-                        src={logoImage}
-                        alt="NVM GUI"
-                        style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 8,
-                            objectFit: 'contain',
-                            flexShrink: 0
-                        }}
-                    />
+                    <div style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 8,
+                        overflow: 'hidden',
+                        flexShrink: 0,
+                        background: 'rgba(255,255,255,0.05)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        filter: 'drop-shadow(0 4px 12px rgba(9, 132, 227, 0.25)) drop-shadow(0 4px 12px rgba(0, 184, 148, 0.25))'
+                    }}>
+                        <img
+                            src={logoImage}
+                            alt="NVM GUI"
+                            style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'contain'
+                            }}
+                        />
+                    </div>
                     {!collapsed && (
                         <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-main)', letterSpacing: -0.5, whiteSpace: 'nowrap', overflow: 'hidden' }}>
                             NVM GUI
@@ -97,7 +108,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                     selectedKeys={[state.currentView]}
                     items={menuItems}
                     onClick={handleMenuClick}
-                    style={{ padding: collapsed ? '0' : '0 8px', borderRight: 0, background: 'transparent' }}
+                    style={{ padding: 0, borderRight: 0, background: 'transparent' }}
                 />
 
                 <div style={{

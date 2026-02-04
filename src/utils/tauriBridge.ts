@@ -67,25 +67,27 @@ const tauriBridge: TauriAPI = {
             return { success: false, message: e.toString() };
         }
     },
-    onInstallProgress: (callback: (progress: number, status: string) => void) => {
+    onInstallProgress: (callback: (data: { version: string, progress: number, status: string, finished?: boolean, error?: string, isPaused?: boolean }) => void) =>
         listen('install:progress', (event: any) => {
-            const { progress, status } = event.payload;
-            callback(progress, status);
-        });
-    },
+            callback(event.payload);
+        }),
+    pauseDownload: (version: string) => invoke('pause_download', { version }),
+    resumeDownload: (version: string) => invoke('resume_download', { version }),
+    cancelDownload: (version: string) => invoke('cancel_download', { version }),
     getTotalSize: () => invoke('get_total_size'),
 
     // 依赖管理
     getGlobalPackages: () => invoke('get_global_packages'),
     checkOutdatedPackages: () => invoke('check_outdated_packages'),
-    installGlobalPackage: async (name: string) => {
+    installGlobalPackage: async (name: string, version?: string) => {
         try {
-            const success = await invoke('install_global_package', { name });
+            const success = await invoke('install_global_package', { name, version });
             return { success: !!success, message: success ? '安装成功' : '安装失败' };
         } catch (e: any) {
             return { success: false, message: e.toString() };
         }
     },
+    getPackageVersions: (packageName: string) => invoke('get_package_versions', { packageName }),
     uninstallGlobalPackage: async (name: string) => {
         try {
             const success = await invoke('uninstall_global_package', { name });
@@ -140,6 +142,46 @@ const tauriBridge: TauriAPI = {
     testAllMirrorSpeed: () => invoke('test_all_mirror_speed'),
     setArch: (arch: '32' | '64') => invoke('set_arch', { arch }),
     refreshTray: () => invoke('refresh_tray'),
+
+    // NVM 安装相关
+    checkNvmInstallation: () => invoke('check_nvm_installation'),
+    getNvmLatestRelease: () => invoke('get_nvm_latest_release'),
+    downloadAndInstallNvm: async (targetDir: string, symlinkDir: string) => {
+        try {
+            const success = await invoke('download_and_install_nvm', { targetDir, symlinkDir });
+            return { success: !!success, message: success ? '安装成功' : '安装失败' };
+        } catch (e: any) {
+            return { success: false, message: e.toString() };
+        }
+    },
+    getDefaultPaths: () => invoke('get_default_paths'),
+    onNvmInstallProgress: (callback: (progress: number, status: string) => void) => {
+        listen('nvm:install:progress', (event: any) => {
+            const { progress, status } = event.payload;
+            callback(progress, status);
+        });
+    },
+
+    // 共享全局包相关
+    getGlobalPrefix: () => invoke('get_global_prefix'),
+    setGlobalPrefix: async (path: string, migratePackages: boolean = true) => {
+        try {
+            const success = await invoke('set_global_prefix', { path, migratePackages });
+            return { success: !!success, message: success ? '设置成功' : '设置失败' };
+        } catch (e: any) {
+            return { success: false, message: e.toString() };
+        }
+    },
+    getSharedPackagesConfig: () => invoke('get_shared_packages_config'),
+    checkPathContains: (path: string) => invoke('check_path_contains', { path }),
+    addToUserPath: async (path: string) => {
+        try {
+            const success = await invoke('add_to_user_path', { path });
+            return { success: !!success, message: success ? '添加成功' : '添加失败' };
+        } catch (e: any) {
+            return { success: false, message: e.toString() };
+        }
+    },
 };
 
 // 注入全局对象

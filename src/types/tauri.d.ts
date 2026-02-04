@@ -8,16 +8,26 @@ export interface TauriAPI {
     switchVersion: (version: string) => Promise<{ success: boolean; message: string }>;
     installVersion: (version: string) => Promise<{ success: boolean; message: string }>;
     uninstallVersion: (version: string) => Promise<{ success: boolean; message: string }>;
-    onInstallProgress: (callback: (progress: number, status: string) => void) => void;
+    onInstallProgress: (callback: (data: { version: string, progress: number, status: string, finished?: boolean, error?: string, isPaused?: boolean }) => void) => Promise<any>;
+    pauseDownload: (version: string) => Promise<boolean>;
+    resumeDownload: (version: string) => Promise<boolean>;
+    cancelDownload: (version: string) => Promise<boolean>;
     getTotalSize: () => Promise<number>;
 
     // 依赖管理
     getGlobalPackages: () => Promise<any[]>;
     checkOutdatedPackages: () => Promise<any[]>;
-    installGlobalPackage: (name: string) => Promise<{ success: boolean; message: string }>;
+    installGlobalPackage: (name: string, version?: string) => Promise<{ success: boolean; message: string }>;
     uninstallGlobalPackage: (name: string) => Promise<{ success: boolean; message: string }>;
     updateGlobalPackage: (name: string) => Promise<{ success: boolean; message: string }>;
     searchPackages: (query: string, page?: number, size?: number) => Promise<any>;
+    getPackageVersions: (packageName: string) => Promise<{
+        name: string;
+        description: string;
+        distTags: Record<string, string>;
+        versions: Array<{ version: string; deprecated: boolean; publishedAt: string | null }>;
+        totalVersions: number;
+    }>;
 
     // 配置与系统
     getConfig: () => Promise<any>;
@@ -34,6 +44,34 @@ export interface TauriAPI {
     testAllMirrorSpeed: () => Promise<any[]>;
     setArch: (arch: '32' | '64') => Promise<{ success: boolean; message: string }>;
     refreshTray: () => Promise<void>;
+
+    // NVM 安装相关
+    checkNvmInstallation: () => Promise<{
+        installed: boolean;
+        nvmHome: string | null;
+        nvmSymlink: string | null;
+        version: string | null;
+    }>;
+    getNvmLatestRelease: () => Promise<{
+        tag_name: string;
+        name: string;
+        assets: Array<{ name: string; browser_download_url: string; size: number }>;
+    }>;
+    downloadAndInstallNvm: (targetDir: string, symlinkDir: string) => Promise<{ success: boolean; message: string }>;
+    getDefaultPaths: () => Promise<{ nvmHome: string; nvmSymlink: string; globalPrefix: string }>;
+    onNvmInstallProgress: (callback: (progress: number, status: string) => void) => void;
+
+    // 共享全局包相关
+    getGlobalPrefix: () => Promise<string | null>;
+    setGlobalPrefix: (path: string) => Promise<{ success: boolean; message: string }>;
+    getSharedPackagesConfig: () => Promise<{
+        enabled: boolean;
+        prefixPath: string | null;
+        pathConfigured: boolean;
+        packageCount: number;
+    }>;
+    checkPathContains: (path: string) => Promise<boolean>;
+    addToUserPath: (path: string) => Promise<{ success: boolean; message: string }>;
 }
 
 declare global {

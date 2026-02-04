@@ -201,7 +201,7 @@ const VersionList: React.FC = () => {
                     </Space>
                 }
             >
-                <div className="bg-deco-text">NODE</div>
+                <div className="bg-deco-text top-right">NODE</div>
                 {/* Control Bar */}
                 <div style={{
                     display: 'flex',
@@ -287,7 +287,7 @@ const VersionList: React.FC = () => {
                                 {item.isActive && (
                                     <>
                                         <div className="active-pattern-bg" />
-                                        <div className="bg-deco-text" style={{ fontSize: 60, right: -10, bottom: -25, opacity: 0.08, color: 'var(--color-green-primary)' }}>{t('common.active')}</div>
+                                        <div className="bg-deco-text" style={{ fontSize: 48, right: 10, bottom: -15, opacity: 0.06, color: 'var(--color-green-primary)' }}>{t('common.active')}</div>
                                     </>
                                 )}
                                 <div style={{

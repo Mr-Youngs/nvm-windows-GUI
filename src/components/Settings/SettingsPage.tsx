@@ -7,12 +7,14 @@ import {
     BgColorsOutlined,
     InfoCircleOutlined,
     SunOutlined,
-    MoonOutlined
+    MoonOutlined,
+    AppstoreOutlined
 } from '@ant-design/icons';
 import { useApp } from '../../context/AppContext';
-import { useTheme, ThemeMode } from '../../context/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import MirrorSettings from './MirrorSettings';
+import GlobalPackageSettings from './GlobalPackageSettings';
 
 const { Title, Text } = Typography;
 
@@ -67,41 +69,6 @@ const SettingsPage: React.FC = () => {
         </div>
     );
 
-    const themeSettings = (
-        <div style={{ maxWidth: 500 }}>
-            <Title level={5} style={{ marginBottom: 20 }}>{t('settings.theme.title')}</Title>
-            <Segmented
-                block
-                size="large"
-                value={theme}
-                onChange={(value) => setTheme(value as ThemeMode)}
-                options={[
-                    {
-                        label: (
-                            <div style={{ padding: 8 }}>
-                                <SunOutlined />
-                                <div style={{ fontSize: 12 }}>{t('settings.theme.lightDesc')}</div>
-                            </div>
-                        ),
-                        value: 'light',
-                    },
-                    {
-                        label: (
-                            <div style={{ padding: 8 }}>
-                                <MoonOutlined />
-                                <div style={{ fontSize: 12 }}>{t('settings.theme.darkDesc')}</div>
-                            </div>
-                        ),
-                        value: 'dark',
-                    },
-                ]}
-            />
-            <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', gap: 12, padding: 16, background: 'var(--primary-bg)', borderRadius: 8 }}>
-                <InfoCircleOutlined style={{ color: 'var(--primary)' }} />
-                <Text type="secondary" style={{ fontSize: 13 }}>{t('settings.theme.tip')}</Text>
-            </div>
-        </div>
-    );
 
     const tabItems = [
         {
@@ -125,14 +92,14 @@ const SettingsPage: React.FC = () => {
             children: <MirrorSettings />
         },
         {
-            key: 'theme',
+            key: 'globalPackages',
             label: (
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <BgColorsOutlined />
-                    {t('settings.tabs.theme')}
+                    <AppstoreOutlined />
+                    {t('globalPackages.title')}
                 </span>
             ),
-            children: themeSettings
+            children: <GlobalPackageSettings />
         }
     ];
 

@@ -25,6 +25,8 @@ export const zh = {
         back: '返回',
         switchToChinese: '切换到中文',
         switchToEnglish: '切换到英文',
+        installed: '已安装',
+        pendingUpdate: '待更新',
     },
     sidebar: {
         versions: '环境管理',
@@ -112,7 +114,6 @@ export const zh = {
         tabs: {
             general: '核心配置',
             mirror: '网络镜像',
-            theme: '界面风格',
         },
         mirror: {
             title: '镜像设置',
@@ -139,13 +140,8 @@ export const zh = {
             }
         },
         theme: {
-            title: '视觉显式模式',
-            light: '浅色清新',
-            dark: '深色护眼',
-            lightDesc: '浅色清新',
-            darkDesc: '深色护眼',
-            tip: '切换模式将立即更新所有界面组件的视觉风格。',
-            toggle: '切换主题',
+            dark: '深色模式',
+            light: '浅色模式',
             switchToDark: '切换到深色模式',
             switchToLight: '切换到浅色模式',
         }
@@ -166,6 +162,7 @@ export const zh = {
             completed: '安装完成',
             networkError: '安装失败，请检查网络连接',
             syncing: '正在同步版本库...',
+            installStarted: '正在启动安装 {version}...',
         }
     },
     wizard: {
@@ -183,6 +180,22 @@ export const zh = {
             desc: '本程序需要配合 nvm-windows 使用。请在下方选择您的实例所在目录，通常位于用户目录下的 AppData\\Roaming\\nvm。',
         },
         associateBtn: '立即关联安装目录',
+        // 新增：自动安装相关
+        detectStatus: '正在检测安装状态...',
+        notInstalled: '未检测到 nvm-windows',
+        notInstalledDesc: '程序将自动为您下载安装 nvm-windows 版本管理器',
+        installAuto: '自动安装',
+        installManual: '手动关联已有安装',
+        selectInstallDir: '选择安装目录',
+        defaultPath: '默认路径',
+        downloading: '正在下载...',
+        downloadProgress: '已下载 {percent}%',
+        extracting: '正在解压...',
+        configuring: '正在配置环境变量...',
+        installSuccess: '安装成功',
+        installSuccessDesc: 'nvm-windows 已成功安装到您的系统',
+        restartTerminal: '请重启终端或 IDE 以使环境变量生效',
+        installError: '安装失败',
     },
     closeDialog: {
         title: '关闭应用',
@@ -190,5 +203,32 @@ export const zh = {
         minimize: '最小化到托盘',
         exit: '退出应用',
         remember: '记住我的选择，下次不再询问',
+    },
+    globalPackages: {
+        title: '全局包设置',
+        enableShared: '配置共享全局包目录',
+        enableSharedDesc: '通过设置用户级 .npmrc 的 prefix，所有 Node.js 版本执行 npm install -g 时都会安装到指定目录。设置后需要将该目录添加到 PATH 才能在终端直接运行全局命令。',
+        sharedPath: '共享目录路径',
+        selectPath: '选择路径',
+        defaultPathHint: '推荐使用默认路径',
+        currentStatus: '当前状态',
+        packageCount: '{count} 个全局包',
+        diskUsage: '占用空间',
+        pathStatus: 'PATH 状态',
+        pathConfigured: '已配置',
+        pathNotConfigured: '未配置',
+        addToPath: '添加到 PATH',
+        pathAddSuccess: 'PATH 配置成功',
+        pathAddDesc: '请重启终端以使更改生效',
+        disable: '禁用共享',
+        disableConfirm: '禁用后将恢复为各版本独立的全局包目录',
+        enable: '启用共享',
+        enableConfirm: '启用后所有版本将共享同一个全局包目录',
+        messages: {
+            setSuccess: '共享目录设置成功',
+            setError: '设置失败',
+            pathAddSuccess: 'PATH 添加成功',
+            pathAddError: 'PATH 添加失败',
+        }
     }
 };

@@ -1,7 +1,7 @@
 {
     "productName": "nvm-windows GUI",
-    "version": "0.2.0",
-    "identifier": "com.nvmwindowsgui.app",
+    "version": "0.3.0",
+    "identifier": "com.nvmwindowsgui.manager",
     "build": {
         "beforeBuildCommand": "npm run build",
         "beforeDevCommand": "npm run dev",

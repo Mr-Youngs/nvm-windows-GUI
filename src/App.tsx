@@ -27,21 +27,6 @@ const AppContent: React.FC = () => {
     const { isDark } = useTheme();
     const [installModalVisible, setInstallModalVisible] = useState(false);
 
-    // 如果未配置，显示配置向导
-    if (!state.config || !state.config.nvmPath) {
-        return (
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                minHeight: '100vh',
-                background: 'var(--bg-app)'
-            }}>
-                <ConfigWizard />
-            </div>
-        );
-    }
-
     const renderContent = () => {
         switch (state.currentView) {
             case 'versions':
@@ -72,9 +57,27 @@ const AppContent: React.FC = () => {
     };
 
     return (
-        <MainLayout>
-            {renderContent()}
-        </MainLayout>
+        <>
+            <div className="bg-glow-container">
+                <div className="bg-glow-orb orb-1"></div>
+                <div className="bg-glow-orb orb-2"></div>
+                <div className="bg-glow-orb orb-3"></div>
+            </div>
+            {!state.config || !state.config.nvmPath ? (
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minHeight: '100vh',
+                }}>
+                    <ConfigWizard />
+                </div>
+            ) : (
+                <MainLayout>
+                    {renderContent()}
+                </MainLayout>
+            )}
+        </>
     );
 };
 

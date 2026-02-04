@@ -1,6 +1,6 @@
 {
   "name": "nvm-windows-gui",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "nvm-windows 的图形化管理界面 (Tauri 版)",
   "scripts": {
     "dev": "webpack serve --mode development",

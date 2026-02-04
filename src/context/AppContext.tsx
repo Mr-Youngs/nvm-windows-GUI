@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { message } from 'antd';
 import { useLanguage } from './LanguageContext';
 
 interface Config {
@@ -30,6 +31,7 @@ interface AppState {
     loading: boolean;
     currentView: 'versions' | 'packages' | 'settings';
     error: string | null;
+    activeDownloads: Record<string, { progress: number, status: string, isPaused: boolean }>;
 }
 
 interface AppContextType {
@@ -43,6 +45,9 @@ interface AppContextType {
     setCurrentView: (view: 'versions' | 'packages' | 'settings') => void;
     setError: (error: string | null) => void;
     selectNvmPath: () => Promise<void>;
+    pauseDownload: (version: string) => Promise<void>;
+    resumeDownload: (version: string) => Promise<void>;
+    cancelDownload: (version: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -56,7 +61,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         globalPackages: [],
         loading: false,
         currentView: 'versions',
-        error: null
+        error: null,
+        activeDownloads: {}
     });
 
     const setLoading = (loading: boolean) => {
@@ -129,6 +135,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             if (result.success) {
                 await loadVersions();
                 await window.tauriAPI.refreshTray();
+
+                // 如果当前没有激活的版本，则自动激活刚安装的版本
+                if (!state.activeVersion) {
+                    await switchVersion(version);
+                }
                 return true;
             } else {
                 setError(result.message);
@@ -185,8 +196,99 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
     };
 
+    const pauseDownload = async (version: string) => {
+        try {
+            await window.tauriAPI.pauseDownload(version);
+            setState(prev => ({
+                ...prev,
+                activeDownloads: {
+                    ...prev.activeDownloads,
+                    [version]: { ...prev.activeDownloads[version], isPaused: true }
+                }
+            }));
+        } catch (error) {
+            setError(error instanceof Error ? error.message : String(error));
+        }
+    };
+
+    const resumeDownload = async (version: string) => {
+        try {
+            await window.tauriAPI.resumeDownload(version);
+            setState(prev => ({
+                ...prev,
+                activeDownloads: {
+                    ...prev.activeDownloads,
+                    [version]: { ...prev.activeDownloads[version], isPaused: false }
+                }
+            }));
+        } catch (error) {
+            setError(error instanceof Error ? error.message : String(error));
+        }
+    };
+
+    const cancelDownload = async (version: string) => {
+        try {
+            await window.tauriAPI.cancelDownload(version);
+            setState(prev => {
+                const newDownloads = { ...prev.activeDownloads };
+                delete newDownloads[version];
+                return { ...prev, activeDownloads: newDownloads };
+            });
+        } catch (error) {
+            setError(error instanceof Error ? error.message : String(error));
+        }
+    };
+
     useEffect(() => {
         loadConfig();
+
+        // Listen for download progress events globally
+        const unlistenPromise = window.tauriAPI.onInstallProgress((data) => {
+            const { version, progress, status, finished, error } = data;
+
+            setState(prev => {
+                if (finished || error) {
+                    const newDownloads = { ...prev.activeDownloads };
+                    delete newDownloads[version];
+                    if (finished) {
+                        // 如果是全局包（标识符含 @），显示安装成功提示
+                        if (version.includes('@')) {
+                            message.success(t('packages.messages.installSuccess', { name: version }));
+                        } else {
+                            // 否则是 Node.js 版本
+                            message.success(t('versionList.messages.installSuccess', { version }));
+                        }
+
+                        // Refresh versions and global packages on finish
+                        setTimeout(() => {
+                            loadVersions();
+                            loadGlobalPackages();
+                        }, 500);
+                    }
+                    if (error) {
+                        message.error(error);
+                        setError(error);
+                    }
+                    return { ...prev, activeDownloads: newDownloads };
+                }
+
+                return {
+                    ...prev,
+                    activeDownloads: {
+                        ...prev.activeDownloads,
+                        [version]: {
+                            progress,
+                            status,
+                            isPaused: data.isPaused !== undefined ? data.isPaused : (prev.activeDownloads[version]?.isPaused || false)
+                        }
+                    }
+                };
+            });
+        });
+
+        return () => {
+            unlistenPromise.then(unlisten => unlisten());
+        };
     }, []);
 
     const contextValue: AppContextType = {
@@ -199,7 +301,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         uninstallVersion,
         setCurrentView,
         setError,
-        selectNvmPath
+        selectNvmPath,
+        pauseDownload,
+        resumeDownload,
+        cancelDownload
     };
 
     return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
