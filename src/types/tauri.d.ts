@@ -72,6 +72,29 @@ export interface TauriAPI {
     }>;
     checkPathContains: (path: string) => Promise<boolean>;
     addToUserPath: (path: string) => Promise<{ success: boolean; message: string }>;
+
+    // 更新检查
+    checkForUpdates: () => Promise<{
+        hasUpdate: boolean;
+        currentVersion: string;
+        latestVersion: string;
+        releaseUrl: string;
+        releaseNotes: string;
+        publishedAt: string;
+    }>;
+
+    // 导入导出
+    exportConfig: () => Promise<string>;
+    importConfig: (jsonData: string) => Promise<boolean>;
+    saveConfigToFile: (filePath: string) => Promise<boolean>;
+    loadConfigFromFile: (filePath: string) => Promise<string>;
+
+    // .nvmrc 支持
+    readNvmrc: (dirPath: string) => Promise<{
+        version: string;
+        source: string;
+        path: string;
+    } | null>;
 }
 
 declare global {

@@ -101,6 +101,14 @@ export const zh = {
             updateAllContent: '将更新 {count} 个包',
             upToDate: '所有包都是最新版本',
             configureNvm: '请先配置 nvm-windows 路径',
+            loadVersionsError: '获取版本列表失败',
+        },
+        versionModal: {
+            title: '版本管理: {name}',
+            selectVersion: '选择版本安装',
+            latestStable: '推荐大多数用户使用的稳定版本',
+            historyVersions: '历史稳定版本',
+            noOtherVersions: '暂无其他稳定版本',
         }
     },
     settings: {
@@ -144,6 +152,26 @@ export const zh = {
             light: '浅色模式',
             switchToDark: '切换到深色模式',
             switchToLight: '切换到浅色模式',
+        },
+        update: {
+            title: '检查更新',
+            checking: '正在检查...',
+            hasUpdate: '发现新版本',
+            noUpdate: '已是最新版本',
+            currentVersion: '当前版本',
+            latestVersion: '最新版本',
+            viewRelease: '查看详情',
+            download: '前往下载',
+            checkFailed: '检查失败',
+        },
+        importExport: {
+            title: '配置管理',
+            export: '导出配置',
+            import: '导入配置',
+            exportSuccess: '配置已导出',
+            importSuccess: '配置已导入，请重新启动应用',
+            importFailed: '导入失败',
+            exportFailed: '导出失败',
         }
     },
     install: {

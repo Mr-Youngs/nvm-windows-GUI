@@ -1,6 +1,6 @@
 {
   "name": "nvm-windows-gui",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "nvm-windows 的图形化管理界面 (Tauri 版)",
   "scripts": {
     "dev": "webpack serve --mode development",
@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
-    "@tauri-apps/api": "^2.9.1"
+    "@tauri-apps/api": "^2.9.1",
+    "@tauri-apps/plugin-dialog": "^2.6.0"
   }
 }

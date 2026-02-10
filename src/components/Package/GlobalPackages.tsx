@@ -146,7 +146,7 @@ const GlobalPackages: React.FC = () => {
             setPackageVersions(stableVersions);
             setDistTags(data.distTags || {});
         } catch (error) {
-            message.error('获取版本列表失败');
+            message.error(t('packages.messages.loadVersionsError'));
         } finally {
             setLoadingVersions(false);
         }
@@ -512,7 +512,7 @@ const GlobalPackages: React.FC = () => {
                                                 <Tag bordered={false} style={{ borderRadius: 4 }}>v{item.version}</Tag>
                                             </Space>
                                             <Space size={8}>
-                                                <Tooltip title="选择版本安装">
+                                                <Tooltip title={t('packages.versionModal.selectVersion')}>
                                                     <Button
                                                         size="small"
                                                         icon={<HistoryOutlined />}
@@ -563,7 +563,7 @@ const GlobalPackages: React.FC = () => {
 
             {/* 版本选择弹窗 */}
             <StyledModal
-                title={`版本管理: ${selectedPackage}`}
+                title={t('packages.versionModal.title', { name: selectedPackage })}
                 icon={<HistoryOutlined />}
                 open={versionModalVisible}
                 onCancel={handleCloseVersionModal}
@@ -580,7 +580,7 @@ const GlobalPackages: React.FC = () => {
                                         <Tag color="blue" bordered={false} style={{ borderRadius: 4, fontWeight: 700 }}>LATEST</Tag>
                                         <Text strong style={{ fontSize: 18 }}>v{distTags.latest}</Text>
                                     </div>
-                                    <Text type="secondary" style={{ fontSize: 12 }}>推荐大多数用户使用的稳定版本</Text>
+                                    <Text type="secondary" style={{ fontSize: 12 }}>{t('packages.versionModal.latestStable')}</Text>
                                 </div>
                                 {renderVersionControl(selectedPackage!, distTags.latest, true)}
                             </div>
@@ -589,7 +589,7 @@ const GlobalPackages: React.FC = () => {
 
                     <div style={{ flex: 1, overflowY: 'auto' }}>
                         <div style={{ padding: '16px 24px 8px 24px' }}>
-                            <Text type="secondary" style={{ fontSize: 12, fontWeight: 600 }}>历史稳定版本</Text>
+                            <Text type="secondary" style={{ fontSize: 12, fontWeight: 600 }}>{t('packages.versionModal.historyVersions')}</Text>
                         </div>
                         <List
                             size="small"
@@ -607,7 +607,7 @@ const GlobalPackages: React.FC = () => {
                                     />
                                 </List.Item>
                             )}
-                            locale={{ emptyText: <Empty description="暂无其他稳定版本" image={Empty.PRESENTED_IMAGE_SIMPLE} /> }}
+                            locale={{ emptyText: <Empty description={t('packages.versionModal.noOtherVersions')} image={Empty.PRESENTED_IMAGE_SIMPLE} /> }}
                         />
                     </div>
                 </div>

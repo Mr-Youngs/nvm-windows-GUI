@@ -31,6 +31,7 @@ import {
 } from '@ant-design/icons';
 import { useApp } from '../../context/AppContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { getMajorVersion, compareVersions } from '../../utils/versionUtils';
 import VersionInstall from './VersionInstall';
 
 const { Text, Title } = Typography;
@@ -107,8 +108,7 @@ const VersionList: React.FC = () => {
 
         if (showLtsOnly) {
             versions = versions.filter(v => {
-                const majorStr = v.version.startsWith('v') ? v.version.substring(1).split('.')[0] : v.version.split('.')[0];
-                const major = parseInt(majorStr);
+                const major = getMajorVersion(v.version);
                 return major % 2 === 0 && major >= 14;
             });
         }
@@ -117,16 +117,7 @@ const VersionList: React.FC = () => {
             let result = 0;
             switch (sortBy) {
                 case 'version':
-                    const vA = a.version.startsWith('v') ? a.version.substring(1) : a.version;
-                    const vB = b.version.startsWith('v') ? b.version.substring(1) : b.version;
-                    const aParts = vA.split('.').map(Number);
-                    const bParts = vB.split('.').map(Number);
-                    for (let i = 0; i < 3; i++) {
-                        if ((aParts[i] || 0) !== (bParts[i] || 0)) {
-                            result = (aParts[i] || 0) - (bParts[i] || 0);
-                            break;
-                        }
-                    }
+                    result = -compareVersions(a.version, b.version);
                     break;
                 case 'date':
                     result = new Date(a.installedDate).getTime() - new Date(b.installedDate).getTime();
@@ -142,8 +133,7 @@ const VersionList: React.FC = () => {
     };
 
     const isLtsVersion = (version: string): boolean => {
-        const majorStr = version.startsWith('v') ? version.substring(1).split('.')[0] : version.split('.')[0];
-        const major = parseInt(majorStr);
+        const major = getMajorVersion(version);
         return major % 2 === 0 && major >= 14;
     };
 

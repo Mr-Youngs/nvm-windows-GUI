@@ -101,6 +101,14 @@ export const en = {
             updateAllContent: 'Will update {count} packages',
             upToDate: 'All packages are up to date',
             configureNvm: 'Please configure nvm-windows path first',
+            loadVersionsError: 'Failed to load versions',
+        },
+        versionModal: {
+            title: 'Version Manager: {name}',
+            selectVersion: 'Select version to install',
+            latestStable: 'Recommended stable version for most users',
+            historyVersions: 'Historical Stable Versions',
+            noOtherVersions: 'No other stable versions available',
         }
     },
     settings: {
@@ -144,6 +152,26 @@ export const en = {
             light: 'Light Mode',
             switchToDark: 'Switch to Dark Mode',
             switchToLight: 'Switch to Light Mode',
+        },
+        update: {
+            title: 'Check for Updates',
+            checking: 'Checking...',
+            hasUpdate: 'New version available',
+            noUpdate: 'You are up to date',
+            currentVersion: 'Current Version',
+            latestVersion: 'Latest Version',
+            viewRelease: 'View Details',
+            download: 'Go to Download',
+            checkFailed: 'Check failed',
+        },
+        importExport: {
+            title: 'Configuration',
+            export: 'Export Config',
+            import: 'Import Config',
+            exportSuccess: 'Configuration exported',
+            importSuccess: 'Configuration imported, please restart the app',
+            importFailed: 'Import failed',
+            exportFailed: 'Export failed',
         }
     },
     install: {

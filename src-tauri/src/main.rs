@@ -478,6 +478,185 @@ async fn get_config() -> Result<NvmConfig, String> {
     internal_get_config().await
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ExportData {
+    pub config: NvmConfig,
+    #[serde(rename = "installedVersions")]
+    pub installed_versions: Vec<String>,
+    #[serde(rename = "exportedAt")]
+    pub exported_at: String,
+    #[serde(rename = "appVersion")]
+    pub app_version: String,
+}
+
+#[tauri::command]
+async fn export_config() -> Result<String, String> {
+    let config = internal_get_config().await?;
+    
+    // 获取已安装版本列表
+    let nvm_path = Path::new(&config.nvm_path);
+    let mut installed_versions = Vec::new();
+    
+    if nvm_path.exists() {
+        if let Ok(entries) = fs::read_dir(nvm_path) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    let name = entry.file_name().into_string().unwrap_or_default();
+                    if name.starts_with('v') && name.split('.').count() >= 3 {
+                        let node_exe = path.join("node.exe");
+                        if node_exe.exists() {
+                            installed_versions.push(name);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    let export_data = ExportData {
+        config,
+        installed_versions,
+        exported_at: Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+        app_version: env!("CARGO_PKG_VERSION").to_string(),
+    };
+    
+    serde_json::to_string_pretty(&export_data)
+        .map_err(|e| format!("序列化失败: {}", e))
+}
+
+#[tauri::command]
+async fn import_config(json_data: String) -> Result<bool, String> {
+    let export_data: ExportData = serde_json::from_str(&json_data)
+        .map_err(|e| format!("解析失败: {}", e))?;
+    
+    // 验证路径是否存在
+    let nvm_path = Path::new(&export_data.config.nvm_path);
+    if !nvm_path.exists() {
+        return Err(format!("NVM 路径不存在: {}", export_data.config.nvm_path));
+    }
+    
+    // 保存配置
+    let settings_path = get_settings_path()?;
+    let mut content = String::new();
+    
+    content.push_str(&format!("root: {}\n", export_data.config.nvm_path));
+    content.push_str(&format!("path: {}\n", export_data.config.nvm_symlink));
+    
+    if !export_data.config.node_mirror.is_empty() {
+        content.push_str(&format!("node_mirror: {}\n", export_data.config.node_mirror));
+    }
+    if !export_data.config.npm_mirror.is_empty() {
+        content.push_str(&format!("npm_mirror: {}\n", export_data.config.npm_mirror));
+    }
+    if !export_data.config.arch.is_empty() {
+        content.push_str(&format!("arch: {}\n", export_data.config.arch));
+    }
+    if !export_data.config.close_action.is_empty() {
+        content.push_str(&format!("close_action: {}\n", export_data.config.close_action));
+    }
+    if let Some(ref prefix) = export_data.config.global_prefix {
+        content.push_str(&format!("global_prefix: {}\n", prefix));
+    }
+    
+    fs::write(&settings_path, content)
+        .map_err(|e| format!("写入配置失败: {}", e))?;
+    
+    Ok(true)
+}
+
+#[tauri::command]
+async fn save_config_to_file(file_path: String) -> Result<bool, String> {
+    let config = internal_get_config().await?;
+    
+    // 获取已安装版本列表
+    let nvm_path = Path::new(&config.nvm_path);
+    let mut installed_versions = Vec::new();
+    
+    if nvm_path.exists() {
+        if let Ok(entries) = fs::read_dir(nvm_path) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    let name = entry.file_name().into_string().unwrap_or_default();
+                    if name.starts_with('v') && name.split('.').count() >= 3 {
+                        let node_exe = path.join("node.exe");
+                        if node_exe.exists() {
+                            installed_versions.push(name);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    let export_data = ExportData {
+        config,
+        installed_versions,
+        exported_at: Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+        app_version: env!("CARGO_PKG_VERSION").to_string(),
+    };
+    
+    let json = serde_json::to_string_pretty(&export_data)
+        .map_err(|e| format!("序列化失败: {}", e))?;
+    
+    fs::write(&file_path, json)
+        .map_err(|e| format!("写入文件失败: {}", e))?;
+    
+    Ok(true)
+}
+
+#[tauri::command]
+async fn load_config_from_file(file_path: String) -> Result<String, String> {
+    let content = fs::read_to_string(&file_path)
+        .map_err(|e| format!("读取文件失败: {}", e))?;
+    Ok(content)
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct NvmrcInfo {
+    pub version: String,
+    pub source: String, // ".nvmrc" or ".node-version"
+    pub path: String,
+}
+
+#[tauri::command]
+async fn read_nvmrc(dir_path: String) -> Result<Option<NvmrcInfo>, String> {
+    let dir = Path::new(&dir_path);
+    
+    // 检查 .nvmrc 文件
+    let nvmrc_path = dir.join(".nvmrc");
+    if nvmrc_path.exists() {
+        let content = fs::read_to_string(&nvmrc_path)
+            .map_err(|e| format!("读取 .nvmrc 失败: {}", e))?;
+        let version = content.trim().to_string();
+        if !version.is_empty() {
+            return Ok(Some(NvmrcInfo {
+                version,
+                source: ".nvmrc".to_string(),
+                path: nvmrc_path.to_string_lossy().to_string(),
+            }));
+        }
+    }
+    
+    // 检查 .node-version 文件 (作为备选)
+    let node_version_path = dir.join(".node-version");
+    if node_version_path.exists() {
+        let content = fs::read_to_string(&node_version_path)
+            .map_err(|e| format!("读取 .node-version 失败: {}", e))?;
+        let version = content.trim().to_string();
+        if !version.is_empty() {
+            return Ok(Some(NvmrcInfo {
+                version,
+                source: ".node-version".to_string(),
+                path: node_version_path.to_string_lossy().to_string(),
+            }));
+        }
+    }
+    
+    Ok(None)
+}
+
 #[tauri::command]
 async fn get_installed_versions() -> Result<Vec<NodeVersion>, String> {
     let config = internal_get_config().await?;
@@ -542,6 +721,27 @@ async fn get_active_version() -> Result<Option<String>, String> {
     Ok(get_current_node_version(&config.nvm_symlink))
 }
 
+// 自动应用 npm registry 配置
+async fn apply_npm_registry() -> Result<(), String> {
+    let config = internal_get_config().await?;
+    
+    // 使用 get_registry_for_npm 获取正确的 registry URL
+    let registry_url = get_registry_for_npm(&config.npm_mirror)
+        .unwrap_or_else(|| "https://registry.npmjs.org/".to_string());
+    
+    // 执行 npm config set registry
+    let output = create_silent_command("npm.cmd")
+        .args(["config", "set", "registry", &registry_url])
+        .output();
+    
+    if let Err(e) = output {
+        // 忽略错误，因为可能在没有 node 时执行
+        eprintln!("Warning: Failed to set npm registry: {}", e);
+    }
+    
+    Ok(())
+}
+
 #[tauri::command]
 async fn switch_version(version: String) -> Result<bool, String> {
     let output = create_silent_command("nvm")
@@ -550,6 +750,8 @@ async fn switch_version(version: String) -> Result<bool, String> {
         .map_err(|e| e.to_string())?;
 
     if output.status.success() {
+        // 切换成功后自动应用 npm registry
+        let _ = apply_npm_registry().await;
         Ok(true)
     } else {
         Err(String::from_utf8_lossy(&output.stderr).to_string())
@@ -805,6 +1007,9 @@ async fn perform_download(
 
     // 删除清理 zip 文件
     let _ = fs::remove_file(zip_path);
+    
+    // 安装完成后自动应用 npm registry 配置
+    let _ = apply_npm_registry().await;
     
     Ok(())
 }
@@ -1496,6 +1701,10 @@ async fn set_config(new_config: NvmConfig) -> Result<bool, String> {
         content.push_str(&format!("global_prefix: {}\n", prefix));
     }
     fs::write(path, content).map_err(|e| e.to_string())?;
+    
+    // 立即应用 npm registry 设置
+    let _ = apply_npm_registry().await;
+    
     Ok(true)
 }
 
@@ -2086,6 +2295,102 @@ async fn add_to_user_path(path: String) -> Result<bool, String> {
     Ok(true)
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateInfo {
+    #[serde(rename = "hasUpdate")]
+    pub has_update: bool,
+    #[serde(rename = "currentVersion")]
+    pub current_version: String,
+    #[serde(rename = "latestVersion")]
+    pub latest_version: String,
+    #[serde(rename = "releaseUrl")]
+    pub release_url: String,
+    #[serde(rename = "releaseNotes")]
+    pub release_notes: String,
+    #[serde(rename = "publishedAt")]
+    pub published_at: String,
+}
+
+#[tauri::command]
+async fn check_for_updates() -> Result<UpdateInfo, String> {
+    let client = reqwest::Client::builder()
+        .user_agent("nvm-windows-gui")
+        .build()
+        .map_err(|e| e.to_string())?;
+    
+    // 获取当前版本
+    let current_version = env!("CARGO_PKG_VERSION").to_string();
+    
+    // 查询 GitHub API
+    let response = client
+        .get("https://api.github.com/repos/Mr-Youngs/nvm-windows-GUI/releases/latest")
+        .send()
+        .await
+        .map_err(|e| format!("Network error: {}", e))?;
+    
+    if !response.status().is_success() {
+        return Err(format!("GitHub API error: {}", response.status()));
+    }
+    
+    let release: serde_json::Value = response.json().await.map_err(|e| e.to_string())?;
+    
+    let latest_version = release["tag_name"]
+        .as_str()
+        .unwrap_or("0.0.0")
+        .trim_start_matches('v')
+        .to_string();
+    
+    let release_url = release["html_url"]
+        .as_str()
+        .unwrap_or("")
+        .to_string();
+    
+    let release_notes = release["body"]
+        .as_str()
+        .unwrap_or("")
+        .to_string();
+    
+    let published_at = release["published_at"]
+        .as_str()
+        .unwrap_or("")
+        .to_string();
+    
+    // 比较版本
+    let has_update = compare_versions(&current_version, &latest_version);
+    
+    Ok(UpdateInfo {
+        has_update,
+        current_version,
+        latest_version,
+        release_url,
+        release_notes,
+        published_at,
+    })
+}
+
+fn compare_versions(current: &str, latest: &str) -> bool {
+    let parse_version = |v: &str| -> Vec<u32> {
+        v.split('.')
+            .filter_map(|s| s.parse().ok())
+            .collect()
+    };
+    
+    let current_parts = parse_version(current);
+    let latest_parts = parse_version(latest);
+    
+    for i in 0..3 {
+        let c = current_parts.get(i).copied().unwrap_or(0);
+        let l = latest_parts.get(i).copied().unwrap_or(0);
+        if l > c {
+            return true;
+        }
+        if l < c {
+            return false;
+        }
+    }
+    false
+}
+
 #[tauri::command]
 fn get_default_paths() -> serde_json::Value {
     let appdata = env::var("APPDATA").unwrap_or_else(|_| "C:\\Users\\Default\\AppData\\Roaming".to_string());
@@ -2187,6 +2492,13 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            // 当启动第二个实例时，聚焦到已有窗口
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }))
         .manage(DownloadState { tasks: Mutex::new(HashMap::new()) })
         .setup(|app| {
             let tray_menu = build_tray_menu(app.handle())?;
@@ -2285,7 +2597,16 @@ fn main() {
             // 下载控制
             pause_download,
             resume_download,
-            cancel_download
+            cancel_download,
+            // 更新检查
+            check_for_updates,
+            // 导入导出
+            export_config,
+            import_config,
+            save_config_to_file,
+            load_config_from_file,
+            // .nvmrc 支持
+            read_nvmrc
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {

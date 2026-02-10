@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { ConfigProvider, Spin } from 'antd';
+import { ConfigProvider, Spin, message } from 'antd';
 import zhCN from 'antd/es/locale/zh_CN';
 import enUS from 'antd/es/locale/en_US';
 import { AppProvider, useApp } from './context/AppContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import MainLayout from './components/Layout/MainLayout';
 import ConfigWizard from './components/Config/ConfigWizard';
 import VersionList from './components/Version/VersionList';
@@ -23,9 +24,31 @@ const LoadingFallback: React.FC = () => {
 };
 
 const AppContent: React.FC = () => {
-    const { state } = useApp();
+    const { state, loadVersions, loadGlobalPackages, setCurrentView } = useApp();
     const { isDark } = useTheme();
+    const { t } = useLanguage();
     const [installModalVisible, setInstallModalVisible] = useState(false);
+
+    // 全局键盘快捷键
+    useKeyboardShortcuts({
+        onRefresh: async () => {
+            message.loading({ content: t('common.loading'), key: 'refresh' });
+            if (state.currentView === 'versions') {
+                await loadVersions();
+            } else if (state.currentView === 'packages') {
+                await loadGlobalPackages();
+            }
+            message.success({ content: t('versionList.tooltips.refresh'), key: 'refresh', duration: 1 });
+        },
+        onInstall: () => {
+            if (state.currentView === 'versions') {
+                setInstallModalVisible(true);
+            }
+        },
+        onNavigateVersions: () => setCurrentView('versions'),
+        onNavigatePackages: () => setCurrentView('packages'),
+        onNavigateSettings: () => setCurrentView('settings'),
+    });
 
     const renderContent = () => {
         switch (state.currentView) {

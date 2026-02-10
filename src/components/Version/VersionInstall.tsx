@@ -25,6 +25,7 @@ import {
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { getMajorVersion, ensureVPrefix } from '../../utils/versionUtils';
 import StyledModal from '../Common/StyledModal';
 
 const { Text } = Typography;
@@ -169,8 +170,7 @@ const VersionInstall: React.FC<VersionInstallProps> = ({ visible, onClose }) => 
         if (version.lts) {
             return <Tag color="green" bordered={false} style={{ borderRadius: 4, fontWeight: 600, fontSize: 11 }}>LTS {typeof version.lts === 'string' ? version.lts : ''}</Tag>;
         }
-        const majorStr = version.version.startsWith('v') ? version.version.substring(1).split('.')[0] : version.version.split('.')[0];
-        const major = parseInt(majorStr);
+        const major = getMajorVersion(version.version);
         // Only show CURRENT for recent odd versions to keep it clean
         if (major % 2 !== 0 && major >= 21) {
             return <Tag color="blue" bordered={false} style={{ borderRadius: 4, fontWeight: 600, fontSize: 11 }}>{t('common.current')}</Tag>;

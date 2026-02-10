@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { TauriAPI } from '../types/tauri';
+import { cleanVersion, getMajorVersion, compareVersions } from './versionUtils';
 
 const tauriBridge: TauriAPI = {
     // 版本管理
@@ -12,24 +13,13 @@ const tauriBridge: TauriAPI = {
         const versions: any[] = await invoke('get_available_versions');
         const majorMap = new Map();
 
-        // 按版本号从高到低排序，确保第一个遇到的是该主版本的最新版
-        const sorted = [...versions].sort((a, b) => {
-            const cleanA = a.version.startsWith('v') ? a.version.substring(1) : a.version;
-            const cleanB = b.version.startsWith('v') ? b.version.substring(1) : b.version;
-            const vA = cleanA.split('.').map(Number);
-            const vB = cleanB.split('.').map(Number);
-            for (let i = 0; i < 3; i++) {
-                if ((vA[i] || 0) !== (vB[i] || 0)) return (vB[i] || 0) - (vA[i] || 0);
-            }
-            return 0;
-        });
+        // 按版本号从高到低排序
+        const sorted = [...versions].sort((a, b) => compareVersions(a.version, b.version));
 
         sorted.forEach(v => {
-            const cleanVersion = v.version.startsWith('v') ? v.version.substring(1) : v.version;
-            const majorStr = cleanVersion.split('.')[0];
-            const majorNum = parseInt(majorStr);
+            const majorNum = getMajorVersion(v.version);
 
-            if (!isNaN(majorNum) && !majorMap.has(majorNum)) {
+            if (majorNum > 0 && !majorMap.has(majorNum)) {
                 majorMap.set(majorNum, {
                     major: majorNum,
                     latest: v.version,
@@ -182,6 +172,18 @@ const tauriBridge: TauriAPI = {
             return { success: false, message: e.toString() };
         }
     },
+
+    // 更新检查
+    checkForUpdates: () => invoke('check_for_updates'),
+
+    // 导入导出
+    exportConfig: () => invoke('export_config'),
+    importConfig: (jsonData: string) => invoke('import_config', { jsonData }),
+    saveConfigToFile: (filePath: string) => invoke('save_config_to_file', { filePath }),
+    loadConfigFromFile: (filePath: string) => invoke('load_config_from_file', { filePath }),
+
+    // .nvmrc 支持
+    readNvmrc: (dirPath: string) => invoke('read_nvmrc', { dirPath }),
 };
 
 // 注入全局对象
